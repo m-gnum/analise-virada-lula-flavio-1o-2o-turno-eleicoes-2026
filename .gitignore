@@ -6,3 +6,4 @@ dados/
 __pycache__/
 saida/*
 !saida/locais_dashboard.parquet
+!saida/seguranca_municipio.parquet

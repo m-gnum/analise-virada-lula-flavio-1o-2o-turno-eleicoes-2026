@@ -17,6 +17,9 @@ loc = loc.sort_values(["uf", "municipio", "cd_mun", "zona", "nr_local"]).reset_i
 
 ufs = sorted(loc.uf.unique())
 mun_chave = loc[["uf", "cd_mun", "municipio"]].drop_duplicates(["uf", "cd_mun"]).reset_index(drop=True)
+# segurança pública (script 07): vítimas de CVLI nos últimos 12 meses e população do Censo 2022, por município
+seg = pd.read_parquet("saida/seguranca_municipio.parquet")[["uf", "cd_mun", "cvli_12m", "pop_2022"]]
+mun_chave = mun_chave.merge(seg, on=["uf", "cd_mun"], how="left")
 mun_idx = {(r.uf, r.cd_mun): i for i, r in mun_chave.iterrows()}
 bairros = sorted(loc.bairro.fillna("").str.strip().str.upper().unique())
 bai_idx = {b: i for i, b in enumerate(bairros)}
@@ -49,7 +52,10 @@ cols = {
 }
 dados = {
     "ufs": ufs,
-    "muns": [[r.municipio, ufs.index(r.uf)] for r in mun_chave.itertuples()],
+    "muns": [
+        [r.municipio, ufs.index(r.uf), -1 if pd.isna(r.cvli_12m) else int(r.cvli_12m), 0 if pd.isna(r.pop_2022) else int(r.pop_2022)]
+        for r in mun_chave.itertuples()
+    ],
     "bairros": bairros,
     "nm": loc.nm_local.fillna("").tolist(),
     "c": cols,

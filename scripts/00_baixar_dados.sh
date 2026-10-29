@@ -44,4 +44,14 @@ baixa "$IBGE/Agregados_por_Setores_Censitarios_Rendimento_do_Responsavel/Agregad
 if [ ! -f BR_setores_CD2022.gpkg ]; then
   curl -fL --retry 3 -o BR_setores_CD2022.gpkg "$IBGE/Agregados_por_Setores_Censitarios/malha_com_atributos/setores/gpkg/BR/BR_setores_CD2022.gpkg"
 fi
+# segurança pública: vítimas de CVLI por município e mês (Sinesp-VDE, gov.br/MJSP), script 07
+mkdir -p dados/sinesp_vde
+for ano in 2025 2026; do
+  [ -s "dados/sinesp_vde/bancovde-$ano.xlsx" ] || curl -fL --retry 3 -A "Mozilla/5.0" -o "dados/sinesp_vde/bancovde-$ano.xlsx" \
+    "https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados/bancovde-$ano.xlsx/@@download/file"
+done
+# IBGE: lista oficial de municípios (código IBGE) e população residente do Censo 2022 (SIDRA, tabela 4709), script 07
+mkdir -p dados/ibge_municipios
+[ -s dados/ibge_municipios/localidades_municipios.json ] || curl -fL --retry 3 -o dados/ibge_municipios/localidades_municipios.json "https://servicodados.ibge.gov.br/api/v1/localidades/municipios"
+[ -s dados/ibge_municipios/sidra_4709_populacao_2022.json ] || curl -fL --retry 3 -o dados/ibge_municipios/sidra_4709_populacao_2022.json "https://servicodados.ibge.gov.br/api/v3/agregados/4709/periodos/2022/variaveis/93?localidades=N6%5Ball%5D"
 echo "ok"
