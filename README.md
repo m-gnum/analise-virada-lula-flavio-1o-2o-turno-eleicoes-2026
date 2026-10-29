@@ -119,7 +119,7 @@ O desenho foi fixado antes de rodar, para não "pescar" resultados. Resposta: va
 
 - Os efeitos são **por +1 desvio-padrão** (ponderado por aptos), em p.p. dos aptos, com IC de 95%. "Efeito relevante" = IC longe de zero **e** efeito de pelo menos 0,5 p.p., porque com 94 mil locais quase tudo é significativo. Correção de Holm nos p-valores, dentro de cada modelo e recorte.
 - Rodado para o Brasil e para cada região, com um teste conjunto de interação (renda × região).
-- **Índice de Moran** (8 vizinhos mais próximos, teste por permutação) para a variação e para o que sobra depois do perfil; **LISA** por cidade (p < 0,01, sem correção para comparações múltiplas).
+- **Índice de Moran** (8 vizinhos mais próximos, teste por permutação) para a variação e para a **parte que o perfil não explica** (o resíduo do modelo ajustado: a variação real menos a prevista só por renda, escolaridade, idade e sexo; se ainda é parecida entre vizinhos, há estrutura geográfica que o perfil não captura); **LISA** por cidade (p < 0,01, sem correção para comparações múltiplas).
 - Resultados em `saida/estatistica.json`, embutido no HTML. Para refazer: `python -I scripts/08_analise_estatistica.py` e depois o 05.
 - Leitura: são **associações entre áreas** (falácia ecológica), não causas; os dados são todos os locais, não uma amostra, então o intervalo mede a dependência de quais cidades entram; características correlacionadas (VIF até 4,1) pedem comparar "sozinha" com "ajustada"; o CVLI só existe por cidade.
 

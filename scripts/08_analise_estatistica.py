@@ -273,7 +273,7 @@ for reg in REGIOES:
         z = sub[f"dpp_{c}"].values
         I, p, mu, sd = moran(z, W)
         o[c] = {"I": I, "p": p, "esperado": mu}
-    # resíduos da regressão com efeito fixo de município (o que sobra depois do perfil)
+    # resíduos do modelo ajustado (sem efeito fixo): a variação real menos a prevista só pelo perfil, ou seja, o que sobra depois do perfil
     Zs = wz(sub, list(VARS), sub.aptos)
     for c in cands:
         y = sub[f"dpp_{c}"]
