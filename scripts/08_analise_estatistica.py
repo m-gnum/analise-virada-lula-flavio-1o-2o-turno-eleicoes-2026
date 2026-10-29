@@ -12,6 +12,7 @@ Desenho (definido antes de rodar, para não "pescar" resultados):
   C) dentro da cidade  efeito fixo de município (compara locais da mesma cidade)
   D) entre cidades     município como unidade (aptos como peso), com CVLI, erro-padrão agrupado por UF
   Efeito = variação em p.p. para +1 desvio-padrão da variável (desvio ponderado por aptos).
+  Recortes: Brasil, 5 regiões e 27 estados. Erro-padrão agrupado (t de Student quando há menos de 50 grupos; robusto HC1 quando há um grupo só).
   Holm dentro de cada modelo/recorte. Interação renda x região (teste conjunto). Moran I global (kNN=8, permutação) e LISA por município.
 """
 import json
@@ -28,6 +29,7 @@ warnings.simplefilter("ignore", FutureWarning)
 rng = np.random.default_rng(2026)
 MIN_APTOS = 100
 REGIOES = ["Brasil", "Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"]
+MIN_MUN = 30  # mínimo de municípios para o modelo entre cidades
 CAND = {"lula": ("lula_t1", "lula_t2"), "flavio": ("flavio_t1", "flavio_t2")}
 VARS = {  # chave: (rótulo, função sobre o dataframe)
     "renda": "Renda média do responsável (log)",
@@ -53,6 +55,17 @@ d["idade60"] = d.idade_60_mais / p * 100
 d["idade16"] = d.idade_16_24 / p * 100
 d["mulheres"] = d.mulheres / p * 100
 d["cvli"] = np.log1p(d.taxa_cvli_100k)
+
+UFS = sorted(d.uf.unique())
+RECORTES = REGIOES + UFS
+
+
+def recorte(df, rec):
+    """Brasil, uma região ou um estado."""
+    if rec == "Brasil":
+        return df
+    return df[df.regiao == rec] if rec in REGIOES else df[df.uf == rec]
+
 
 N_TOTAL = len(d)
 base = d[(d.aptos >= MIN_APTOS)].dropna(subset=list(VARS) + ["dpp_lula", "dpp_flavio"]).copy()
@@ -80,9 +93,18 @@ def holm(ps):
     return adj
 
 
+def fit_robusto(y, X, w, grupos):
+    """WLS com erro-padrão agrupado; t de Student com poucos grupos (<50); HC1 se há um grupo só."""
+    g = pd.factorize(grupos)[0]
+    m = sm.WLS(y, X, weights=w)
+    if g.max() == 0:
+        return m.fit(cov_type="HC1")
+    return m.fit(cov_type="cluster", cov_kwds={"groups": g}, use_t=len(set(g)) < 50)
+
+
 def ajustar(y, X, w, grupos, nomes):
     X = sm.add_constant(X)
-    res = sm.WLS(y, X, weights=w).fit(cov_type="cluster", cov_kwds={"groups": pd.factorize(grupos)[0]})
+    res = fit_robusto(y, X, w, grupos)
     ci = res.conf_int()
     out = {}
     for n in nomes:
@@ -134,11 +156,11 @@ def modelos(sub, cands_y, vars_, tem_cvli=False):
     return res, Z
 
 
-def teste_interacao(sub, c):
-    """Teste conjunto: o efeito da renda (ajustado) muda por região? (Wald agrupado por município)"""
+def teste_interacao(sub, c, por="regiao"):
+    """Teste conjunto: o efeito da renda (ajustado) muda por região (ou por estado, dentro de uma região)? (Wald agrupado por município)"""
     w = sub.aptos
     Z = wz(sub, list(VARS), w)
-    R = pd.get_dummies(sub.regiao, drop_first=True).astype(float)
+    R = pd.get_dummies(sub[por], drop_first=True).astype(float)
     X = Z.copy()
     inter = []
     for r in R.columns:
@@ -146,7 +168,7 @@ def teste_interacao(sub, c):
         inter.append(f"renda_x_{r}")
     X = pd.concat([X, R], axis=1)
     X = sm.add_constant(X)
-    res = sm.WLS(sub[f"dpp_{c}"], X, weights=w).fit(cov_type="cluster", cov_kwds={"groups": pd.factorize(sub.mun)[0]})
+    res = fit_robusto(sub[f"dpp_{c}"], X, w, sub.mun)
     A = np.zeros((len(inter), len(res.params)))
     for i, n in enumerate(inter):
         A[i, list(res.params.index).index(n)] = 1
@@ -172,14 +194,16 @@ out = {
 cands = ["lula", "flavio"]
 # escala da resposta: média e desvio-padrão (ponderados por aptos) da variação em p.p., para dar noção de tamanho aos efeitos
 out["meta"]["escala"] = {}
-for reg in REGIOES:
-    sub = base if reg == "Brasil" else base[base.regiao == reg]
+out["meta"]["recortes"] = RECORTES
+out["meta"]["uf_regiao"] = {u: base[base.uf == u].regiao.iloc[0] for u in UFS}
+for reg in RECORTES:
+    sub = recorte(base, reg)
     out["meta"]["escala"][reg] = {
         c: {"media": float(np.average(sub[f"dpp_{c}"], weights=sub.aptos)), "dp": float(np.sqrt(np.average((sub[f"dpp_{c}"] - np.average(sub[f"dpp_{c}"], weights=sub.aptos)) ** 2, weights=sub.aptos)))}
         for c in ["lula", "flavio"]
     }
-for reg in REGIOES:
-    sub = base if reg == "Brasil" else base[base.regiao == reg]
+for reg in RECORTES:
+    sub = recorte(base, reg)
     out["reg"][reg], Z = modelos(sub, cands, VARS)
     print(reg, {c: round(out["reg"][reg][c]["ajustado"]["renda"]["b"], 3) for c in cands}, "n=", len(sub))
 
@@ -194,6 +218,9 @@ print("VIF:", {k: round(v, 2) for k, v in out["corr"]["vif"].items()})
 for c in cands:
     out["interacao"][c] = teste_interacao(base, c)
 print("interação renda x região:", out["interacao"])
+# dentro de cada região: o efeito da renda muda de estado para estado?
+out["interacao_uf"] = {r: {c: teste_interacao(base[base.regiao == r], c, "uf") for c in cands} for r in REGIOES[1:]}
+print("interação renda x estado:", {r: {c: round(v["p"], 4) for c, v in o.items()} for r, o in out["interacao_uf"].items()})
 
 # ------------------------- modelo D: entre cidades (com CVLI) -------------------------
 g = base.groupby(["uf", "cd_mun"])
@@ -207,15 +234,16 @@ mun = mun.reset_index()
 mun["uf_"] = mun.uf
 md = mun.dropna(subset=list(VARS_MUN) + ["dpp_lula"]).copy()
 print(f"municípios no modelo entre cidades: {len(md)} de {len(mun)}")
-for reg in REGIOES:
-    sub = md if reg == "Brasil" else md[md.regiao == reg]
-    if len(sub) < 30:
+for reg in RECORTES:
+    sub = recorte(md, reg)
+    if len(sub) < MIN_MUN:
+        print("sem modelo entre cidades:", reg, len(sub), "municípios")
         continue
     Zm = wz(sub, list(VARS_MUN), sub.aptos)
     o = {"n": int(len(sub))}
     for c in cands:
         y = sub[f"dpp_{c}"]
-        simples = {v: ajustar(y, Zm[[v]], sub.aptos, sub.uf, [v])[0][v] for v in VARS_MUN}
+        simples = {v: ajustar(y, Zm[[v]], sub.aptos, sub.uf, [v])[0][v] for v in VARS_MUN}  # estado único: HC1
         aj, r = ajustar(y, Zm, sub.aptos, sub.uf, list(VARS_MUN))
         o[c] = {"simples": com_holm(simples), "ajustado": com_holm(aj), "r2": float(r.rsquared)}
     out["mun"][reg] = o
@@ -265,8 +293,8 @@ def lisa(z, W, perms=499):
 
 
 loc_ok = base[(base.coord_aprox == 0) & base.lat.notna() & base.lon.notna()]
-for reg in REGIOES:
-    sub = loc_ok if reg == "Brasil" else loc_ok[loc_ok.regiao == reg]
+for reg in RECORTES:
+    sub = recorte(loc_ok, reg)
     W = vizinhos(sub.lat.values, sub.lon.values)
     o = {"n": int(len(sub))}
     for c in cands:
