@@ -19,6 +19,8 @@ header{padding:18px 16px 6px;max-width:1400px;margin:0 auto}
 h1{margin:0;font-size:22px;letter-spacing:-.2px}
 h2{margin:0 0 4px;font-size:16px}
 .sub{color:var(--mut);margin:4px 0 0}
+.fontes{font-size:12px;line-height:1.5;word-break:break-word}
+.fontes a{color:var(--flavio)}
 main{max-width:1400px;margin:0 auto;padding:8px 16px 40px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:14px}
 .filtros{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
@@ -147,7 +149,15 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
 <div id="carregando">Carregando dados…</div>
 <header>
   <h1>Lula x Flávio: quanto cada um ganhou ou perdeu entre o 1º e o 2º turno</h1>
-  <p class="sub">Presidente da República, 2026. Variação = votos no 2º turno − votos no 1º turno, por local de votação, cidade, estado e região. Dados do TSE e do Censo 2022 (IBGE).</p>
+  <p class="sub">Presidente da República, 2026. Variação = votos no 2º turno − votos no 1º turno, por local de votação, cidade, estado e região. Dados do TSE (resultados e perfil do eleitorado), do Censo 2022 (IBGE: renda e população) e do Sinesp-VDE (Ministério da Justiça: taxa de mortes violentas, CVLI, por cidade).</p>
+  <p class="sub fontes"><b>Fontes:</b>
+    TSE, resultados: <a href="https://dadosabertos.tse.jus.br/dataset/resultados-2026" target="_blank" rel="noopener">https://dadosabertos.tse.jus.br/dataset/resultados-2026</a> ·
+    TSE, eleitorado e locais de votação: <a href="https://dadosabertos.tse.jus.br/dataset/eleitorado-2026" target="_blank" rel="noopener">https://dadosabertos.tse.jus.br/dataset/eleitorado-2026</a> ·
+    IBGE, Censo 2022 (renda do responsável por setor): <a href="https://censo2022.ibge.gov.br/panorama/downloads.html" target="_blank" rel="noopener">https://censo2022.ibge.gov.br/panorama/downloads.html</a> ·
+    IBGE, população por município (SIDRA, tabela 4709): <a href="https://sidra.ibge.gov.br/tabela/4709" target="_blank" rel="noopener">https://sidra.ibge.gov.br/tabela/4709</a> ·
+    Sinesp-VDE (CVLI, out/2025 a set/2026): <a href="https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/dados-nacionais-1/base-de-dados-e-notas-metodologicas-dos-gestores-estaduais-sinesp-vde-2022-e-2023" target="_blank" rel="noopener">https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/dados-nacionais-1/base-de-dados-e-notas-metodologicas-dos-gestores-estaduais-sinesp-vde-2022-e-2023</a>.
+    Código e passo a passo: <a href="https://github.com/m-gnum/analise-virada-lula-flavio-1o-2o-turno-eleicoes-2026" target="_blank" rel="noopener">https://github.com/m-gnum/analise-virada-lula-flavio-1o-2o-turno-eleicoes-2026</a>.
+  </p>
 </header>
 <main>
   <section class="card filtros">
