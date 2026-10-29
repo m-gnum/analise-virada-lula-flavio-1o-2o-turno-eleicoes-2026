@@ -343,6 +343,11 @@ function segSet(ms){
   for(const m of ms){ const q = D.muns[m]; if(q[2]>=0 && q[3]>0){ v += q[2]; p += q[3]; } }
   return {v, p, taxa: p ? v/p*1e5 : NaN};
 }
+/* tamanho de uma unidade em relação ao recorte, e comparação da taxa de CVLI com uma referência */
+const szTxt = (ap, tot) => { const f = tot ? ap/tot*100 : 0; return (f>0 && f<.01 ? 'menos de 0,01' : fmtd(f, f<1?2:1))+'% dos aptos'; };
+const pcInt = x => x>0 && x<1 ? 'menos de 1' : fmtd(x,0);
+const fem = nv => nv==='reg' || nv==='mun';
+const cmpSg = (v, r, de) => { const q = v/r; return `<b>${rotSeg(q)} da média ${de}</b> (${sgnd((q-1)*100,0)}%; média de ${fmtd(r,1)} por 100 mil)`; };
 const rotSeg = r => r>=1.5 ? 'muito acima' : r>=1.15 ? 'acima' : r>=.87 ? 'próxima' : r>=.67 ? 'abaixo' : 'muito abaixo';
 
 async function carregar(){
@@ -519,15 +524,16 @@ function gBalanco(t){
 function insMapa(arr){
   const pos=[], neg=[], tot = arr.length;
   const nome = k => k==='dl' ? 'Lula' : 'Flávio';
-  const lin = (g,k) => `${esc(g.nome)} (${sgn(g[k])} votos, ${pct(g[k],g.ap)})`;
+  const TA = arr.reduce((t,g)=>t+g.ap,0);
+  const lin = (g,k) => `${esc(g.nome)} (${sgn(g[k])} votos, ${pct(g[k],g.ap)}; ${fmt(g.ap)} aptos, ${szTxt(g.ap,TA).replace(' dos aptos','')} do recorte)`;
   for(const k of ['dl','df']){
     if(!S[k==='dl'?'lula':'flavio']) continue;
     const cor = k==='dl' ? COR.lula : COR.flavio;
     const ord = [...arr].sort((a,b)=>b[k]-a[k]);
-    const sobe = arr.filter(g=>g[k]>0).length, desce = arr.filter(g=>g[k]<0);
-    if(ord[0][k]>0) pos.push(`${cl(cor,nome(k))}: maior ganho em ${lin(ord[0],k)}; cresceu em ${sobe} de ${tot} ${un[S.nivel]} (${fmtd(sobe/tot*100,0)}%).`);
-    if(desce.length){ const w = ord[ord.length-1]; neg.push(`${cl(cor,nome(k))}: maior perda em ${lin(w,k)}; perdeu votos em ${desce.length} de ${tot} ${un[S.nivel]} (${fmtd(desce.length/tot*100,0)}%), somando ${sgn(desce.reduce((s,g)=>s+g[k],0))} votos.`); }
-    else neg.push(`${cl(cor,nome(k))}: não perdeu votos em nenhuma das ${tot} ${un[S.nivel]}.`);
+    const sobeL = arr.filter(g=>g[k]>0), sobe = {n:sobeL.length, ap:sobeL.reduce((t,g)=>t+g.ap,0)}, desce = arr.filter(g=>g[k]<0);
+    if(ord[0][k]>0) pos.push(`${cl(cor,nome(k))}: maior ganho em ${lin(ord[0],k)}; cresceu em ${sobe.n} de ${tot} ${un[S.nivel]} (${pcInt(sobe.n/tot*100)}%), que reúnem ${szTxt(sobe.ap,TA)}.`);
+    if(desce.length){ const w = ord[ord.length-1]; neg.push(`${cl(cor,nome(k))}: maior perda em ${lin(w,k)}; perdeu votos em ${desce.length} de ${tot} ${un[S.nivel]} (${pcInt(desce.length/tot*100)}%, que reúnem ${szTxt(desce.reduce((t,g)=>t+g.ap,0),TA)}), somando ${sgn(desce.reduce((s,g)=>s+g[k],0))} votos.`); }
+    else neg.push(`${cl(cor,nome(k))}: não perdeu votos em ${['reg','mun'].includes(S.nivel)?'nenhuma das':'nenhum dos'} ${tot} ${un[S.nivel]}.`);
   }
   ins('iMapa', pos, neg);
 }
@@ -648,20 +654,20 @@ function gUnid(idx){
     if(!on) continue;
     const ord = [...todas].sort((a,b)=>b[k]-a[k]);
     const top = ord.filter(g=>g[k]>0).slice(0,3), fim = ord.filter(g=>g[k]<0).reverse().slice(0,3);
-    if(top.length) pos.push(`${cl(cor,nm)}: maiores ganhos em votos: ${top.map(g=>`${esc(g.nome)} (${kk(g[k])})`).join(', ')}${com(top)}.`);
+    if(top.length) pos.push(`${cl(cor,nm)}: maiores ganhos em votos: ${top.map(g=>`${esc(g.nome)} (${kk(g[k])}; ${szTxt(g.ap,T.ap)})`).join(', ')}${com(top)}.`);
     const rel = todas.filter(g=>g.ap>=minAp).sort((a,b)=>b[k]/b.ap-a[k]/a.ap);
-    if(rel.length>1 && rel[0][k]>0) pos.push(`${cl(cor,nm)}: maior ganho proporcional: ${esc(rel[0].nome)} (${pct(rel[0][k],rel[0].ap)}, ${kk(rel[0][k])} votos).`);
+    if(rel.length>1 && rel[0][k]>0) pos.push(`${cl(cor,nm)}: maior ganho proporcional: ${esc(rel[0].nome)} (${pct(rel[0][k],rel[0].ap)}, ${kk(rel[0][k])} votos; ${szTxt(rel[0].ap,T.ap)}).`);
     const relTop = rel.filter(g=>g[k]>0).slice(0,3);
-    if(relTop.length>=2){ const t = com(relTop); if(t) pos.push(`${cl(cor,nm)}: em proporção aos aptos, o maior crescimento está em ${relTop.map(g=>`${esc(g.nome)} (${pct(g[k],g.ap)})`).join(', ')}${t}.`); }
-    if(fim.length) neg.push(`${cl(cor,nm)}: maiores perdas em votos: ${fim.map(g=>`${esc(g.nome)} (${kk(g[k])})`).join(', ')}${com(fim)}.`);
+    if(relTop.length>=2){ const t = com(relTop); if(t) pos.push(`${cl(cor,nm)}: em proporção aos aptos, o maior crescimento está em ${relTop.map(g=>`${esc(g.nome)} (${pct(g[k],g.ap)}; ${szTxt(g.ap,T.ap)})`).join(', ')}${t}.`); }
+    if(fim.length) neg.push(`${cl(cor,nm)}: maiores perdas em votos: ${fim.map(g=>`${esc(g.nome)} (${kk(g[k])}; ${szTxt(g.ap,T.ap)})`).join(', ')}${com(fim)}.`);
     const r0 = rel[rel.length-1];
-    if(rel.length>1 && r0[k]<0) neg.push(`${cl(cor,nm)}: pior variação proporcional: ${esc(r0.nome)} (${pct(r0[k],r0.ap)}, ${kk(r0[k])} votos).`);
+    if(rel.length>1 && r0[k]<0) neg.push(`${cl(cor,nm)}: pior variação proporcional: ${esc(r0.nome)} (${pct(r0[k],r0.ap)}, ${kk(r0[k])} votos; ${szTxt(r0.ap,T.ap)}).`);
     const relBot = rel.slice(-3).reverse();
-    if(relBot.length>=2 && rel.length>=6){ const t = com(relBot); if(t) neg.push(`${cl(cor,nm)}: em proporção aos aptos, o menor crescimento está em ${relBot.map(g=>`${esc(g.nome)} (${pct(g[k],g.ap)})`).join(', ')}${t}.`); }
+    if(relBot.length>=2 && rel.length>=6){ const t = com(relBot); if(t) neg.push(`${cl(cor,nm)}: em proporção aos aptos, o menor crescimento está em ${relBot.map(g=>`${esc(g.nome)} (${pct(g[k],g.ap)}; ${szTxt(g.ap,T.ap)})`).join(', ')}${t}.`); }
     if(T[k]>0){ const conc = [...todas].sort((a,b)=>b[k]-a[k]).slice(0,3).filter(g=>g[k]>0); if(conc.length>=2 && todas.length>=6) pos.push(`${cl(cor,nm)}: as ${conc.length} ${un_} que mais ganharam em votos respondem por ${fmtd(conc.reduce((t,g)=>t+g[k],0)/T[k]*100,0)}% do ganho do recorte: ${conc.map(g=>`${esc(g.nome)} (${fmtd(g[k]/T[k]*100,0)}%)`).join(', ')}.`); }
     const q = todas.filter(g=>g[k]<0).length;
     if(!fim.length) neg.push(`${cl(cor,nm)}: não perdeu votos em nenhuma das ${todas.length} unidades.`);
-    else neg.push(`${cl(cor,nm)} perdeu votos em ${q} de ${todas.length} unidades (${fmtd(q/todas.length*100,0)}%).`);
+    else neg.push(`${cl(cor,nm)} perdeu votos em ${q} de ${todas.length} unidades (${pcInt(q/todas.length*100)}%), que reúnem ${szTxt(todas.filter(g=>g[k]<0).reduce((t,g)=>t+g.ap,0),T.ap)}.`);
   }
   const info = [];
   { // viradas de liderança entre os dois turnos
@@ -670,7 +676,7 @@ function gUnid(idx){
       if(!vira.length) info.push(`Nenhuma das ${fmt(todas.length)} ${un_} trocou de líder entre Lula e Flávio de um turno para o outro.`);
       else {
         const pL = vira.filter(g=>g.l2>g.f2), pF = vira.filter(g=>g.f2>g.l2), maiores = [...vira].sort((a,b)=>b.ap-a.ap).slice(0,3);
-        info.push(`Viradas de liderança: ${fmt(vira.length)} de ${fmt(todas.length)} ${un_} (${fmtd(vira.length/todas.length*100,0)}%) trocaram de líder entre Lula e Flávio, ${fmt(pL.length)} para ${cl(COR.lula,'Lula')} e ${fmt(pF.length)} para ${cl(COR.flavio,'Flávio')}. Maiores: ${maiores.map(g=>`${esc(g.nome)} (${fmt(g.ap)} aptos, para ${g.l2>g.f2?'Lula':'Flávio'})`).join(', ')}.`);
+        info.push(`Viradas de liderança: ${fmt(vira.length)} de ${fmt(todas.length)} ${un_} (${fmtd(vira.length/todas.length*100,0)}%) trocaram de líder entre Lula e Flávio (juntas, ${szTxt(vira.reduce((t,g)=>t+g.ap,0),T.ap)}), ${fmt(pL.length)} para ${cl(COR.lula,'Lula')} e ${fmt(pF.length)} para ${cl(COR.flavio,'Flávio')}. Maiores: ${maiores.map(g=>`${esc(g.nome)} (${fmt(g.ap)} aptos, para ${g.l2>g.f2?'Lula':'Flávio'})`).join(', ')}.`);
       }
     }
   }
@@ -1039,7 +1045,7 @@ function perfilAreas(idx){
       if(db.length) neg.push(`${cl(cor,nome)}: nas áreas (${S.tam}% dos aptos) de menor variação, destacam-se ${juntar(db.map(o=>layFr(o.k,o.z)))} (${db.map(d1).join('; ')}).`);
     }
     const queda = [...Array(n).keys()].filter(j=>dv[j]<0);
-    neg.push(queda.length ? `${cl(cor,nome)} perdeu votos em termos absolutos em ${fmt(queda.length)} de ${fmt(n)} locais (${fmtd(queda.length/n*100,1)}%), somando ${sgn(queda.reduce((s,j)=>s+dv[j],0))} votos.` : `${cl(cor,nome)} não perdeu votos em termos absolutos em nenhum dos ${fmt(n)} locais.`);
+    neg.push(queda.length ? `${cl(cor,nome)} perdeu votos em termos absolutos em ${fmt(queda.length)} de ${fmt(n)} locais (${fmtd(queda.length/n*100,1)}%, com ${szTxt(queda.reduce((t,j)=>t+P.w[j],0),P.tot)}), somando ${sgn(queda.reduce((s,j)=>s+dv[j],0))} votos.` : `${cl(cor,nome)} não perdeu votos em termos absolutos em nenhum dos ${fmt(n)} locais.`);
     info.push(`${cl(cor,nome)}: as ${folhas.length} regras acima explicam ${fmtd(r2*100,0)}% da variação entre locais; o restante vem de fatores que não estão nos dados (campanha local, histórico, outros).`);
   }
   info.push(`${fmt(n)} locais com perfil e renda no filtro (${fmt(idxPerdidos(idx,n))} sem renda do Censo ou sem taxa de CVLI ficaram de fora desta seção).`);
@@ -1160,7 +1166,7 @@ function htmlPares(ct, NL, NF){
 
 function resumoEscopo(idx, nivel, titulo, unico){
   const NL = cl(COR.lula,'Lula'), NF = cl(COR.flavio,'Flávio'), t = somar(idx);
-  const pan = [], onde = [], perf = [], atn = [], comb = [];
+  const pan = [], onde = [], perf = [], atn = [], comb = [], seg = [];
   // com um único recorte escolhido, a cidade/UF no nome da unidade é redundante
   const sn = x => unico && nivel!=='uf' ? x.replace(/ · .*$/,'').replace(/\/[A-Z]{2}$/,'') : x;
   const un1 = {uf:'estado', mun:'cidade', bai:'bairro', loc:'local de votação'}[nivel], unN = un[nivel], refT = REFTXT[nivel];
@@ -1200,13 +1206,18 @@ function resumoEscopo(idx, nivel, titulo, unico){
       : comPro.length===0 ? `Ou seja, cada candidato cresceu mais em ${unN} diferentes: nenhum dos ${K} primeiros de um aparece na lista do outro.`
       : `Há sobreposição parcial: ${comPro.length} de ${K} ${unN} aparecem nas duas listas (${nm(comPro)}).`;
     onde.push(`Em proporção aos eleitores de cada ${un1}, ${NL} cresceu mais em ${nm(topLp)}; ${NF}, em ${nm(topFp)}. ${verd}`);
+    const sh = x => x.reduce((u,g)=>u+g.ap,0)/t.ap*100, sa = x => szTxt(x.reduce((u,g)=>u+g.ap,0), t.ap);
+    if(nivel!=='uf' && nivel!=='reg'){
+      const peq = Math.max(sh(topLp), sh(topFp)) < Math.min(sh(topLa), sh(topFa))/2;
+      onde.push(`Para dar a dimensão: os maiores ganhos em votos de ${NL} somam ${sa(topLa)} e os de ${NF}, ${sa(topFa)}; os que mais cresceram em proporção somam ${sa(topLp)} (${NL}) e ${sa(topFp)} (${NF}).${peq?` Os campeões de crescimento proporcional são bem menores que os de maior ganho em votos: leia esse ranking como retrato de ${unN} ${fem(nivel)?'pequenas':'pequenos'}, não do recorte todo.`:''}`);
+    }
     if(elig.length>=6){
       const r = corrP(elig.map(g=>pp(g,'dl')), elig.map(g=>pp(g,'df')), elig.map(g=>g.ap));
-      onde.push(r>=.4 ? `No conjunto dos ${fmt(elig.length)} ${unN}${elig.length<nUn?' com pelo menos 0,5% dos eleitores do recorte':''}, os dois tendem a crescer nos mesmos lugares (onde um cresce mais, o outro também cresce mais).`
-        : r<=-.2 ? `No conjunto dos ${fmt(elig.length)} ${unN}${elig.length<nUn?' com pelo menos 0,5% dos eleitores do recorte':''}, os dois crescem em lugares opostos: onde um cresce mais, o outro tende a crescer menos.`
-        : `No conjunto dos ${fmt(elig.length)} ${unN}${elig.length<nUn?' com pelo menos 0,5% dos eleitores do recorte':''}, o crescimento de um quase não acompanha o do outro: cada um tem seus próprios focos.`);
+      onde.push(r>=.4 ? `No conjunto d${fem(nivel)?'as':'os'} ${fmt(elig.length)} ${unN}${elig.length<nUn?' com pelo menos 0,5% dos eleitores do recorte':''}, os dois tendem a crescer nos mesmos lugares (onde um cresce mais, o outro também cresce mais).`
+        : r<=-.2 ? `No conjunto d${fem(nivel)?'as':'os'} ${fmt(elig.length)} ${unN}${elig.length<nUn?' com pelo menos 0,5% dos eleitores do recorte':''}, os dois crescem em lugares opostos: onde um cresce mais, o outro tende a crescer menos.`
+        : `No conjunto d${fem(nivel)?'as':'os'} ${fmt(elig.length)} ${unN}${elig.length<nUn?' com pelo menos 0,5% dos eleitores do recorte':''}, o crescimento de um quase não acompanha o do outro: cada um tem seus próprios focos.`);
     }
-    if(elig.length<6) onde.push(`Há poucos ${unN} neste recorte para descrever o perfil de cada um; veja o perfil local a local logo abaixo.`);
+    if(elig.length<6) onde.push(`Há ${fem(nivel)?'poucas':'poucos'} ${unN} neste recorte para descrever o perfil de cada um; veja o perfil local a local logo abaixo.`);
     if(elig.length>=6){
       const ref = pool(elig), sd = sdUnid(elig), dl = descDifs(pool(topLp), ref, sd), df = descDifs(pool(topFp), ref, sd);
       if(comPro.length===K && K>=2) onde.push(`Esses mesmos ${unN} têm: ${dl||`perfil muito próximo da média ${refT}`}, em comparação com a média ${refT}.`);
@@ -1217,6 +1228,27 @@ function resumoEscopo(idx, nivel, titulo, unico){
       const baL = top('dl',pp,-1), baF = top('df',pp,-1);
       const bl = descDifs(pool(baL), ref, sd), bf = descDifs(pool(baF), ref, sd);
       onde.push(`Onde ${NL} cresceu menos (${nm(baL)}): ${bl||'perfil próximo da média'}. Onde ${NF} cresceu menos (${nm(baF)}): ${bf||'perfil próximo da média'}.`);
+      // segurança pública (CVLI) nesses mesmos grupos de unidades
+      if(new Set(elig.map(g=>fval('sg',g).toFixed(3))).size>1){
+        const f = x => fval('sg', pool(x)), rv = fval('sg', ref);
+        seg.push(`Onde ${NL} mais cresceu (${nm(topLp)}), a taxa de CVLI é de ${fmtd(f(topLp),1)} por 100 mil: ${cmpSg(f(topLp), rv, refT)}. Onde ${NF} mais cresceu (${nm(topFp)}), ela é de ${fmtd(f(topFp),1)}: ${cmpSg(f(topFp), rv, refT)}.`);
+        seg.push(`Onde ${NL} cresceu menos (${nm(baL)}), a taxa é de ${fmtd(f(baL),1)} por 100 mil: ${cmpSg(f(baL), rv, refT)}. Onde ${NF} cresceu menos (${nm(baF)}), é de ${fmtd(f(baF),1)}: ${cmpSg(f(baF), rv, refT)}.`);
+        const xs = elig.map(g=>fval('sg',g)), ws = elig.map(g=>g.ap), fr = [];
+        for(const [k,nome] of [['dl',NL],['df',NF]]){ const r = corrP(xs, elig.map(g=>pp(g,k)), ws); if(isFinite(r) && Math.abs(r)>=.3) fr.push(`${nome}: tende a crescer <b>${r>0?'mais':'menos'}</b> onde a taxa de CVLI é mais alta (correlação ${fmtd(r,2)})`); }
+        seg.push(fr.length ? `Entre ${fem(nivel)?'as':'os'} ${fmt(elig.length)} ${unN}, ${fr.join('; ')}. É uma associação entre ${unN}, não indica causa, e a taxa é um dado da cidade.` : `Entre ${fem(nivel)?'as':'os'} ${fmt(elig.length)} ${unN}, a taxa de CVLI quase não acompanha o crescimento de nenhum dos dois (correlação baixa): ela não distingue bem onde cada candidato cresceu.`);
+      }
+    }
+  }
+
+  /* segurança pública: posição do recorte (a taxa de CVLI só existe por cidade) */
+  {
+    const sgE = segSet(new Set(idx.map(i=>c.mun[i]))), sgBR = segSet(D.muns.map((_,j)=>j));
+    if(isFinite(sgE.taxa)){
+      const base = `<b>${fmtd(sgE.taxa,1)} por 100 mil habitantes</b> (${fmt(sgE.v)} vítimas nos últimos 12 meses)`;
+      if(nivel==='bai' || nivel==='loc'){
+        const sgUF = segSet(D.muns.map((m,j)=>m[1]===S.uf?j:-1).filter(j=>j>=0));
+        seg.unshift(`A taxa de CVLI da cidade é ${base}: ${cmpSg(sgE.taxa, sgUF.taxa, 'do estado')} e ${cmpSg(sgE.taxa, sgBR.taxa, 'do Brasil')}. Esse dado só existe por cidade, então vale igual para todos os ${unN} deste recorte e não ajuda a distinguir ${unN} entre si.`);
+      } else seg.unshift(`A taxa de CVLI deste recorte é ${base}: ${cmpSg(sgE.taxa, sgBR.taxa, 'do Brasil')}.`);
     }
   }
 
@@ -1248,11 +1280,11 @@ function resumoEscopo(idx, nivel, titulo, unico){
   if(nUn>=2){
     for(const [k,nome] of [['dl',NL],['df',NF]]){
       const perd = units.filter(g=>g[k]<0).sort((a,b)=>a[k]-b[k]);
-      if(!perd.length){ atn.push(`${nome} não perdeu votos em nenhum${nivel==='loc'?'':'a'} d${nivel==='loc'?'os':'as'} ${fmt(nUn)} ${unN}.`); continue; }
-      const nomes = perd.slice(0,3).map(g=>esc(sn(g.nome))).join(', ');
+      if(!perd.length){ atn.push(`${nome} não perdeu votos em ${['reg','mun'].includes(nivel)?'nenhuma das':'nenhum dos'} ${fmt(nUn)} ${unN}.`); continue; }
+      const nomes = perd.slice(0,3).map(g=>`${esc(sn(g.nome))} (${szTxt(g.ap,t.ap)})`).join(', ');
       let car = '';
       if(perd.length>=2 && elig.length>=6){ const d = descDifs(pool(perd), pool(elig), sdUnid(elig)); if(d) car = ` Esses lugares têm ${d}, em comparação com a média ${refT}.`; }
-      atn.push(`${nome} perdeu votos em ${fmt(perd.length)} de ${fmt(nUn)} ${unN} (${fmtd(perd.length/nUn*100,0)}%), com maior queda em ${nomes}.${car}`);
+      atn.push(`${nome} perdeu votos em ${fmt(perd.length)} de ${fmt(nUn)} ${unN} (${pcInt(perd.length/nUn*100)}%, que reúnem ${szTxt(perd.reduce((u,g)=>u+g.ap,0),t.ap)}), com maior queda em ${nomes}.${car}`);
     }
   }
   if(t.da>0) atn.push(`A abstenção subiu neste recorte, o que reduziu o ganho dos dois.`);
@@ -1266,7 +1298,7 @@ function resumoEscopo(idx, nivel, titulo, unico){
   const par = ct ? htmlPares(ct, NL, NF) : null;
   if(par) comb.unshift(...par.resumo);
   const bloco = (tit, l) => l.length ? `<h4>${tit}</h4><ul>${l.map(x=>`<li>${x}</li>`).join('')}</ul>` : '';
-  const corpo = bloco('Panorama', pan) + bloco('Onde cada um ganhou, e se foi nos mesmos lugares', onde) + bloco('Que tipo de área virou para cada candidato', perf)
+  const corpo = bloco('Panorama', pan) + bloco('Onde cada um ganhou, e se foi nos mesmos lugares', onde) + bloco('Que tipo de área virou para cada candidato', perf) + bloco('Segurança pública (CVLI)', seg)
     + (comb.length || ct ? `<h4>Combinando vários fatores</h4>${comb.length?`<ul>${comb.map(x=>`<li>${x}</li>`).join('')}</ul>`:''}${par?par.html:''}` : '') + bloco('Pontos de atenção', atn);
   return unico ? `<div class="rs"><h3>${titulo}</h3>${corpo}</div>` : `<details class="rs" open><summary>${titulo}</summary>${corpo}</details>`;
 }
