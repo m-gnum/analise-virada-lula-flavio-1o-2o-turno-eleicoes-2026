@@ -77,6 +77,15 @@ table.comp tr.cab td{background:#f3f5f8;font-weight:600}
 .aviso{font-size:12.5px;color:var(--mut);background:#fff8e6;border:1px solid #f0dfae;border-radius:8px;padding:10px 12px}
 .aviso ul{margin:6px 0 0 18px;padding:0}
 .nota{font-size:12px;color:var(--mut);margin:6px 0 0}
+.stcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin:10px 0}
+.stc{background:#f7f9fb;border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.stc .t{font-size:12px;color:var(--mut)} .stc .v{font-size:20px;font-weight:650;margin:1px 0} .stc .s{font-size:12px;color:var(--mut)}
+.stbox{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0;font-size:12.5px}
+.stbox>div{border-radius:8px;padding:8px 12px;border:1px solid var(--line)}
+.stbox .sim{background:#f0f8f3} .stbox .nao{background:#fff8e6;border-color:#f0dfae}
+.stbox ul{margin:4px 0 0 16px;padding:0}
+#mapaLisa{height:430px;border-radius:8px;border:1px solid var(--line)}
+@media(max-width:900px){.stbox{grid-template-columns:1fr}}
 #carregando{position:fixed;inset:0;background:rgba(246,247,249,.92);display:flex;align-items:center;justify-content:center;font-size:16px;z-index:9999}
 .leaflet-tooltip{font-size:12px;line-height:1.35}
 .h3{font-size:14px;margin:14px 0 4px}
@@ -294,6 +303,65 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
     <div id="resumo"></div>
   </section>
 
+  <h1 class="secao">Análise Estatística</h1>
+
+  <section class="card" id="stat">
+    <h2>O perfil da área está associado à variação de votos? Efeito de cada característica</h2>
+    <p class="sub" id="stIntro"></p>
+    <div class="stbox">
+      <div class="sim"><b>O que esta análise permite dizer</b><ul>
+        <li>Se áreas com mais (ou menos) de certa característica tiveram variação maior ou menor, e de quanto.</li>
+        <li>Quais características pesam mais, comparando sozinhas e todas juntas.</li>
+        <li>Se o padrão se concentra geograficamente, além do que o perfil explica.</li></ul></div>
+      <div class="nao"><b>O que ela não permite dizer</b><ul>
+        <li>Como eleitores individuais votaram (falácia ecológica) nem por que mudaram de voto: são associações, não causas.</li>
+        <li>Generalizar: os dados são todos os locais, não uma amostra. O intervalo mostra o quanto o resultado depende de quais cidades entram, não uma margem de erro de pesquisa.</li>
+        <li>Separar características que andam juntas (renda, escolaridade): compare o efeito "sozinha" com o "ajustado".</li></ul></div>
+    </div>
+    <div class="hctl">
+      <label>Recorte <select id="stReg"></select></label>
+      <label>Modelo <select id="stMod">
+        <option value="simples">Cada característica sozinha</option>
+        <option value="ajustado" selected>Ajustado: todas juntas</option>
+        <option value="dentro">Dentro da cidade (compara locais da mesma cidade)</option>
+        <option value="cid_ajustado">Entre cidades, ajustado (inclui CVLI)</option>
+        <option value="cid_simples">Entre cidades, sozinha (inclui CVLI)</option>
+      </select></label>
+    </div>
+    <div class="stcards" id="stCards"></div>
+    <div id="stForest"></div>
+    <div class="ins" id="stTexto"></div>
+    <details style="margin-top:8px"><summary>Como ler o gráfico e a tabela</summary>
+      <div class="nota">
+        Cada ponto é o efeito, em p.p. dos aptos, de aumentar a característica em <b>1 desvio-padrão</b> (uma diferença típica entre áreas); assim as características ficam comparáveis. A barra é o intervalo de confiança de 95%, com erro-padrão agrupado por município (nos modelos entre cidades, por estado). Ponto cheio = efeito relevante (intervalo longe de zero e efeito de pelo menos 0,5 p.p.); ponto vazio = pequeno ou incerto. A faixa cinza marca os efeitos menores que 0,5 p.p. Com tantos locais quase tudo é "estatisticamente significativo", por isso o critério é o tamanho do efeito. O p-valor da tabela tem correção de Holm para comparações múltiplas. Regressão ponderada pelo número de aptos, só com locais de 100 ou mais aptos.
+      </div>
+      <div id="stTab" style="overflow:auto"></div>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2>O efeito muda de região para região?</h2>
+    <p class="sub" id="stRegSub"></p>
+    <div class="hctl"><label>Característica <select id="stVar"></select></label></div>
+    <div id="stPorReg"></div>
+    <div class="ins" id="stRegTxt"></div>
+  </section>
+
+  <section class="grid-eq">
+    <div class="card">
+      <h2>A variação se concentra no espaço? (índice de Moran)</h2>
+      <p class="sub">0 = locais vizinhos sem relação; 1 = vizinhos com variação praticamente igual. Mede se os locais próximos variaram de forma parecida (8 vizinhos mais próximos). Em todos os recortes, p &lt; 0,01 por permutação.</p>
+      <div id="stMoran"></div>
+      <div class="ins" id="stMoranTxt"></div>
+    </div>
+    <div class="card">
+      <h2>Onde estão as manchas de alta e de baixa variação (por cidade)</h2>
+      <div class="hctl"><label>Candidato <select id="stLisaC"><option value="lula">Lula</option><option value="flavio">Flávio</option></select></label></div>
+      <div id="mapaLisa"></div>
+      <p class="nota" id="stLisaTxt"></p>
+    </div>
+  </section>
+
   <section class="aviso">
     <b>Como ler, e o que esses dados não mostram</b>
     <ul>
@@ -309,13 +377,14 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
       <li><b>Resultado nos dois turnos:</b> compara só Lula e Flávio, em % dos votos válidos (no 1º turno o total inclui os candidatos eliminados). "Virou" indica que a liderança entre os dois mudou de um turno para o outro naquela unidade.</li>
       <li><b>Faixas de renda da tabela</b> são por área: a % do eleitorado que vota em locais cuja renda média cai na faixa, não a distribuição de renda dos domicílios. A renda é de 2022 e é convertida com o salário mínimo de 2026 (R$ 1.621), o que faz as áreas parecerem mais pobres do que eram em valores reais.</li>
       <li><b>CVLI (mortes violentas):</b> é informado pelos estados ao Sinesp com critérios próprios, só existe por município, cobre os 12 últimos meses (não o período da eleição) e oscila muito em cidades pequenas.</li>
-      <li><b>Associações e regras:</b> o painel testa muitas características ao mesmo tempo, então em recortes com poucas unidades podem surgir padrões por acaso. Não há intervalos de confiança ou testes estatísticos; os textos descrevem, não explicam.</li>
+      <li><b>Associações e regras:</b> o painel testa muitas características ao mesmo tempo, então em recortes com poucas unidades podem surgir padrões por acaso. Os textos descrevem, não explicam.</li>
     </ul>
   </section>
 </main>
 
 <script>
 const B64 = "__DADOS_B64__";
+const B64E = "__ESTAT_B64__";
 </script>
 <script>
 "use strict";
@@ -360,8 +429,8 @@ const fem = nv => nv==='reg' || nv==='mun';
 const cmpSg = (v, r, de) => { const q = v/r; return `<b>${rotSeg(q)} da média ${de}</b> (${sgnd((q-1)*100,0)}%; média de ${fmtd(r,1)} por 100 mil)`; };
 const rotSeg = r => r>=1.5 ? 'muito acima' : r>=1.15 ? 'acima' : r>=.87 ? 'próxima' : r>=.67 ? 'abaixo' : 'muito abaixo';
 
-async function carregar(){
-  const bin = Uint8Array.from(atob(B64), ch => ch.charCodeAt(0));
+async function carregar(b64 = B64){
+  const bin = Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
   const ds = new DecompressionStream('gzip');
   const txt = await new Response(new Blob([bin]).stream().pipeThrough(ds)).text();
   return JSON.parse(txt);
@@ -1444,8 +1513,145 @@ function ligar(){
   });
 }
 
+
+/* ---------- análise estatística (resultados calculados offline em scripts/08_analise_estatistica.py) ---------- */
+let ST, mapaLisa, camadaLisa;
+const ST_NOUN = {renda:'renda do responsável', superior:'eleitores com ensino superior', sem_instr:'eleitores sem instrução', idade60:'eleitores com 60 anos ou mais', idade16:'eleitores de 16 a 24 anos', mulheres:'mulheres', cvli:'taxa de CVLI'};
+const ST_ROT = {renda:'Renda do responsável', superior:'% ensino superior', sem_instr:'% sem instrução', idade60:'% com 60 anos ou mais', idade16:'% de 16 a 24 anos', mulheres:'% de mulheres', cvli:'Taxa de CVLI'};
+const ST_MOD = {
+  simples:  {txt:'comparando cada característica isoladamente', get:(r,c)=>ST.reg[r][c].simples, n:(r,c)=>ST.reg[r][c].n, r2:null},
+  ajustado: {txt:'comparando áreas parecidas nas demais características', get:(r,c)=>ST.reg[r][c].ajustado, n:(r,c)=>ST.reg[r][c].n, r2:(r,c)=>ST.reg[r][c].r2},
+  dentro:   {txt:'comparando locais da mesma cidade', get:(r,c)=>ST.reg[r][c].dentro, n:(r,c)=>ST.reg[r][c].n_fe, r2:(r,c)=>ST.reg[r][c].r2_dentro},
+  cid_ajustado: {txt:'comparando cidades parecidas nas demais características', get:(r,c)=>ST.mun[r][c].ajustado, n:(r,c)=>ST.mun[r].n, r2:(r,c)=>ST.mun[r][c].r2},
+  cid_simples:  {txt:'comparando cidades, cada característica isoladamente', get:(r,c)=>ST.mun[r][c].simples, n:(r,c)=>ST.mun[r].n, r2:null},
+};
+const ST_LIM = .5;
+const stRel = k => (k.lo>0 || k.hi<0) && Math.abs(k.b) >= ST_LIM;
+const stP = p => p<.001 ? '< 0,001' : fmtd(p,3);
+const stNome = c => c==='lula' ? cl(COR.lula,'Lula') : cl(COR.flavio,'Flávio');
+
+function stForest(){
+  const reg = $('stReg').value, mod = $('stMod').value, M = ST_MOD[mod];
+  const A = M.get(reg,'lula'), B = M.get(reg,'flavio'), vars_ = Object.keys(A);
+  const y0 = vars_.map((_,i)=>vars_.length-1-i);
+  const tr = (cand, K, dy, cor) => ({
+    type:'scatter', mode:'markers', name:cand==='lula'?'Lula':'Flávio',
+    x: vars_.map(v=>K[v].b), y: y0.map(y=>y+dy),
+    error_x:{type:'data', symmetric:false, array:vars_.map(v=>K[v].hi-K[v].b), arrayminus:vars_.map(v=>K[v].b-K[v].lo), color:cor, thickness:1.6, width:4},
+    marker:{color:cor, size:10, symbol:vars_.map(v=>stRel(K[v])?'circle':'circle-open'), line:{color:cor,width:2}},
+    hovertemplate: vars_.map(v=>`<b>${ST_ROT[v]}</b><br>${cand==='lula'?'Lula':'Flávio'}: ${sgnd(K[v].b,2)} p.p. por +1 DP<br>IC 95%: ${sgnd(K[v].lo,2)} a ${sgnd(K[v].hi,2)}<br>p (Holm): ${stP(K[v].p_holm)}<extra></extra>`)
+  });
+  const xs = vars_.flatMap(v=>[A[v].lo,A[v].hi,B[v].lo,B[v].hi]), m = Math.max(1.2, Math.ceil(Math.max(...xs.map(Math.abs))*2)/2);
+  Plotly.react('stForest', [tr('lula',A,.14,COR.lula), tr('flavio',B,-.14,COR.flavio)], {
+    ...LAY, height: 90+vars_.length*62, margin:{l:150,r:20,t:10,b:44},
+    xaxis:{range:[-m,m], zeroline:true, zerolinecolor:'#111', zerolinewidth:1, gridcolor:'#e5e7eb', title:{text:'Variação em p.p. dos aptos, para +1 desvio-padrão da característica', font:{size:11}}},
+    yaxis:{tickvals:y0, ticktext:vars_.map(v=>ST_ROT[v]), range:[-.6, vars_.length-.4], fixedrange:true, zeroline:false},
+    shapes:[{type:'rect', xref:'x', yref:'paper', x0:-ST_LIM, x1:ST_LIM, y0:0, y1:1, fillcolor:'rgba(107,114,128,.12)', line:{width:0}, layer:'below'}],
+    legend:{orientation:'h', y:1.08, x:0}, hovermode:'closest'
+  }, {displayModeBar:false, responsive:true});
+
+  // cartões de contexto
+  const E = ST.meta.escala[reg], nn = M.n(reg,'lula'), r2l = M.r2 ? M.r2(reg,'lula') : null, r2f = M.r2 ? M.r2(reg,'flavio') : null;
+  const un = mod.startsWith('cid') ? 'cidades' : 'locais';
+  $('stCards').innerHTML =
+    `<div class="stc"><div class="t">Observações no modelo</div><div class="v">${fmt(nn)}</div><div class="s">${un}${mod==='dentro'?' (em cidades com 2 ou mais locais)':''}</div></div>` +
+    `<div class="stc"><div class="t">${cl(COR.lula,'Lula')}: variação típica</div><div class="v">${sgnd(E.lula.media,1)} p.p.</div><div class="s">média no recorte; desvio-padrão ${fmtd(E.lula.dp,1)} p.p.</div></div>` +
+    `<div class="stc"><div class="t">${cl(COR.flavio,'Flávio')}: variação típica</div><div class="v">${sgnd(E.flavio.media,1)} p.p.</div><div class="s">média no recorte; desvio-padrão ${fmtd(E.flavio.dp,1)} p.p.</div></div>` +
+    (r2l!=null ? `<div class="stc"><div class="t">Parte da variação que o perfil explica</div><div class="v">${fmtd(r2l*100,0)}% · ${fmtd(r2f*100,0)}%</div><div class="s">Lula · Flávio (R²): o resto não é explicado pelo perfil</div></div>` : '');
+
+  // frases
+  const frase = (cand, K) => {
+    const rel = vars_.filter(v=>stRel(K[v])).sort((a,b)=>Math.abs(K[b].b)-Math.abs(K[a].b)).slice(0,3);
+    if(!rel.length) return `<li class="i">${stNome(cand)}: nenhuma característica tem efeito relevante neste modelo (todos abaixo de ${fmtd(ST_LIM,1)} p.p. por desvio-padrão, ou com intervalo que inclui zero).</li>`;
+    return `<li class="${K[rel[0]].b>0?'p':'n'}">${stNome(cand)}: ` + rel.map(v=>`em áreas com mais ${ST_NOUN[v]}, a variação foi <b>${K[v].b>0?'maior':'menor'} em ${fmtd(Math.abs(K[v].b),2)} p.p.</b> (+1 DP)`).join('; ') + `.</li>`;
+  };
+  // inversões de sinal entre "sozinha" e "ajustado" (só nos modelos de locais)
+  let aviso = '';
+  if(!mod.startsWith('cid')){
+    const S1 = {lula:ST.reg[reg].lula.simples, flavio:ST.reg[reg].flavio.simples}, S2 = {lula:ST.reg[reg].lula.ajustado, flavio:ST.reg[reg].flavio.ajustado};
+    const inv = [];
+    for(const c of ['lula','flavio']) for(const v of Object.keys(S1[c])) if(stRel(S1[c][v]) && stRel(S2[c][v]) && Math.sign(S1[c][v].b)!==Math.sign(S2[c][v].b)) inv.push(`${c==='lula'?'Lula':'Flávio'}, ${ST_ROT[v].toLowerCase()}`);
+    if(inv.length) aviso = `<li class="i"><b>Atenção:</b> o sinal do efeito inverte quando as outras características entram no modelo (${inv.join('; ')}). Essas características andam juntas com outras, então o efeito "sozinho" não deve ser lido isoladamente.</li>`;
+  }
+  $('stTexto').innerHTML = `<b class="t">Leitura (${M.txt})</b><ul>${frase('lula',A)}${frase('flavio',B)}${aviso}</ul>` +
+    `<div class="nota">Para ter noção de tamanho: a variação de Lula neste recorte foi, em média, ${sgnd(E.lula.media,1)} p.p. e a de Flávio ${sgnd(E.flavio.media,1)} p.p. dos aptos. Efeitos de 1 p.p. ou menos por desvio-padrão são pequenos perto dessa variação.</div>`;
+
+  // tabela
+  const lin = (K, cand) => vars_.map(v=>`<tr><td>${ST_ROT[v]}</td><td>${cand}</td><td>${sgnd(K[v].b,2)}</td><td>${sgnd(K[v].lo,2)} a ${sgnd(K[v].hi,2)}</td><td>${stP(K[v].p_holm)}</td><td>${stRel(K[v])?'sim':'não'}</td></tr>`).join('');
+  $('stTab').innerHTML = `<table><tr><th>Característica</th><th>Candidato</th><th>Efeito (p.p. por +1 DP)</th><th>IC 95%</th><th>p (Holm)</th><th>Relevante</th></tr>${lin(A,'Lula')}${lin(B,'Flávio')}</table>`;
+}
+
+function stPorReg(){
+  const v = $('stVar').value, mod = $('stMod').value, M = ST_MOD[mod];
+  const regs = ['Brasil','Norte','Nordeste','Centro-Oeste','Sudeste','Sul'];
+  if(v==='cvli' && !mod.startsWith('cid')){ $('stPorReg').innerHTML = '<p class="nota" style="padding:20px 6px">A taxa de CVLI só entra nos modelos entre cidades. Escolha um deles em "Modelo".</p>'; $('stRegTxt').innerHTML=''; return; }
+  const K = c => regs.map(r=>M.get(r,c)[v]);
+  const yy = regs.map((_,i)=>regs.length-1-i);
+  const tr = (cand,dy,cor) => { const k = K(cand); return {
+    type:'scatter', mode:'markers', name:cand==='lula'?'Lula':'Flávio', x:k.map(z=>z.b), y:yy.map(y=>y+dy),
+    error_x:{type:'data', symmetric:false, array:k.map(z=>z.hi-z.b), arrayminus:k.map(z=>z.b-z.lo), color:cor, thickness:1.6, width:4},
+    marker:{color:cor, size:10, symbol:k.map(z=>stRel(z)?'circle':'circle-open'), line:{color:cor,width:2}},
+    hovertemplate:k.map((z,i)=>`<b>${regs[i]}</b><br>${cand==='lula'?'Lula':'Flávio'}: ${sgnd(z.b,2)} p.p. por +1 DP<br>IC 95%: ${sgnd(z.lo,2)} a ${sgnd(z.hi,2)}<extra></extra>`)}; };
+  const xs = ['lula','flavio'].flatMap(c=>K(c).flatMap(z=>[z.lo,z.hi])), m = Math.max(1.2, Math.ceil(Math.max(...xs.map(Math.abs))*2)/2);
+  Plotly.react('stPorReg', [tr('lula',.14,COR.lula), tr('flavio',-.14,COR.flavio)], {
+    ...LAY, height:90+regs.length*50, margin:{l:110,r:20,t:10,b:44},
+    xaxis:{range:[-m,m], zeroline:true, zerolinecolor:'#111', gridcolor:'#e5e7eb', title:{text:`${ST_ROT[v]}: variação em p.p. dos aptos, para +1 desvio-padrão`, font:{size:11}}},
+    yaxis:{tickvals:yy, ticktext:regs, range:[-.6, regs.length-.4], fixedrange:true, zeroline:false},
+    shapes:[{type:'rect', xref:'x', yref:'paper', x0:-ST_LIM, x1:ST_LIM, y0:0, y1:1, fillcolor:'rgba(107,114,128,.12)', line:{width:0}, layer:'below'}],
+    legend:{orientation:'h', y:1.1, x:0}
+  }, {displayModeBar:false, responsive:true});
+  const I = ST.interacao;
+  $('stRegSub').textContent = `Mesma característica, modelo "${$('stMod').selectedOptions[0].textContent}", um modelo por região. Se os pontos de regiões diferentes ficam em lados opostos de zero, a associação não é a mesma no país todo.`;
+  const dif = ['lula','flavio'].map(c => { const k = K(c).slice(1); const pos = k.filter(z=>stRel(z)&&z.b>0).length, neg = k.filter(z=>stRel(z)&&z.b<0).length; return pos&&neg ? `${stNome(c)}: o efeito tem sinais opostos entre regiões` : ''; }).filter(Boolean);
+  $('stRegTxt').innerHTML = `<ul><li class="i">Teste conjunto (modelo ajustado, locais): o efeito da <b>renda</b> difere entre as regiões para ${stNome('lula')} (F = ${fmtd(I.lula.F,1)}, p ${stP(I.lula.p)}) e para ${stNome('flavio')} (F = ${fmtd(I.flavio.F,1)}, p ${stP(I.flavio.p)}). Ou seja, não existe um único "efeito da renda" para o país.</li>${dif.map(t=>`<li class="n">${t}.</li>`).join('')}</ul>`;
+}
+
+function stMoran(){
+  const regs = ['Brasil','Norte','Nordeste','Centro-Oeste','Sudeste','Sul'], M = ST.moran;
+  const bar = (nome, cor, f) => ({type:'bar', name:nome, x:regs, y:regs.map(f), marker:{color:cor}, hovertemplate:`${nome}<br>%{x}: I = %{y:.2f}<extra></extra>`});
+  Plotly.react('stMoran', [
+    bar('Lula · variação', COR.lula, r=>M[r].lula.I), bar('Lula · o que sobra após o perfil', '#e8909c', r=>M[r].lula.I_resid),
+    bar('Flávio · variação', COR.flavio, r=>M[r].flavio.I), bar('Flávio · o que sobra após o perfil', '#8fb0dc', r=>M[r].flavio.I_resid)
+  ], {...LAY, barmode:'group', height:330, margin:{l:40,r:10,t:10,b:60}, yaxis:{range:[0,1], title:{text:'I de Moran', font:{size:11}}, gridcolor:'#e5e7eb'}, legend:{orientation:'h', y:-.22, font:{size:11}}}, {displayModeBar:false, responsive:true});
+  const b = M.Brasil, mm = ST.moran_mun;
+  $('stMoranTxt').innerHTML = `<ul><li class="i">No Brasil, locais próximos variaram de forma parecida: I = <b>${fmtd(b.lula.I,2)}</b> para ${stNome('lula')} e <b>${fmtd(b.flavio.I,2)}</b> para ${stNome('flavio')}.</li>` +
+    `<li class="i">Mesmo descontando renda, escolaridade, idade e sexo do local, sobra <b>${fmtd(b.lula.I_resid,2)}</b> (Lula) e <b>${fmtd(b.flavio.I_resid,2)}</b> (Flávio): a vizinhança explica muito do que o perfil não explica.</li>` +
+    `<li class="i">Entre cidades, I = ${fmtd(mm.lula.I,2)} (Lula) e ${fmtd(mm.flavio.I,2)} (Flávio).</li></ul>` +
+    `<div class="nota">Calculado nos ${fmt(ST.moran.Brasil.n)} locais da análise. Os 623 locais com coordenada aproximada (centro da cidade) não têm renda do entorno e já ficam de fora.</div>`;
+}
+
+function stLisa(){
+  const c = $('stLisaC').value, Lz = ST.lisa, K = Lz[c];
+  camadaLisa.clearLayers();
+  const COL = {0:'#cbd5e1', 1:c==='lula'?COR.lula:COR.flavio, 2:'#374151', 3:COR.ambar, 4:COR.verde};
+  const ROT = {0:'sem padrão claro', 1:'alta cercada de alta', 2:'baixa cercada de baixa', 3:'alta cercada de baixa', 4:'baixa cercada de alta'};
+  const ord = [...K.cl.keys()].sort((a,b)=>(K.cl[a]>0)-(K.cl[b]>0));
+  const cont = {0:0,1:0,2:0,3:0,4:0};
+  for(const i of ord){
+    const k = K.cl[i]; cont[k]++;
+    const r = k ? 3.2 + Math.min(5, Math.sqrt(Lz.aptos[i])/110) : 2;
+    L.circleMarker([Lz.lat[i], Lz.lon[i]], {renderer:canvasLisa, radius:r, weight:k?1:0, color:'#fff', fillColor:COL[k], fillOpacity:k?.85:.45})
+      .bindTooltip(`<b>${esc(Lz.nome[i])}</b><br>Variação: ${sgnd(K.v[i],1)} p.p. dos aptos<br>${ROT[k]}`, {sticky:true}).addTo(camadaLisa);
+  }
+  $('stLisaTxt').innerHTML = `Cada ponto é uma cidade. <span style="color:${COL[1]}">●</span> variação alta cercada de variação alta (${fmt(cont[1])}) · <span style="color:${COL[2]}">●</span> baixa cercada de baixa (${fmt(cont[2])}) · <span style="color:${COL[3]}">●</span> alta cercada de baixa (${fmt(cont[3])}) · <span style="color:${COL[4]}">●</span> baixa cercada de alta (${fmt(cont[4])}) · <span style="color:#cbd5e1">●</span> sem padrão claro (${fmt(cont[0])}). Indicador local de associação espacial (LISA), p &lt; 0,01 por permutação, sem correção para comparações múltiplas: use como pista, não como prova. Variação em p.p. dos aptos de cada cidade (cidades pequenas oscilam mais).`;
+}
+
+let canvasLisa;
+function stIniciar(){
+  const regs = ['Brasil','Norte','Nordeste','Centro-Oeste','Sudeste','Sul'];
+  $('stReg').innerHTML = regs.map(r=>`<option>${r}</option>`).join('');
+  $('stVar').innerHTML = Object.keys(ST_ROT).map(v=>`<option value="${v}">${ST_ROT[v]}</option>`).join('');
+  $('stIntro').innerHTML = `Regressões ponderadas pelo número de aptos em ${fmt(ST.meta.n_analise)} locais de votação (de ${fmt(ST.meta.n_locais)}; ficam de fora os com menos de ${ST.meta.min_aptos} aptos ou sem perfil e renda) e em ${fmt(ST.mun.Brasil.n)} cidades. Resposta: variação de cada candidato em p.p. dos aptos entre os dois turnos. Os resultados foram calculados antes (scripts/08_analise_estatistica.py) e não mudam com os filtros do topo da página.`;
+  $('stReg').onchange = $('stMod').onchange = () => { stForest(); stPorReg(); };
+  $('stVar').onchange = stPorReg; $('stLisaC').onchange = stLisa;
+  mapaLisa = L.map('mapaLisa', {zoomSnap:.25, preferCanvas:true}).setView([-14.5,-52], 4);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {maxZoom:12, attribution:'Mapa base © Esri, HERE, Garmin, OpenStreetMap contributors'}).addTo(mapaLisa);
+  canvasLisa = L.canvas({padding:.3}); camadaLisa = L.layerGroup().addTo(mapaLisa);
+  stForest(); stPorReg(); stMoran(); stLisa();
+}
+
 (async function(){
-  D = await carregar(); c = D.c; N = c.ap.length;
+  D = await carregar(); c = D.c; N = c.ap.length; ST = await carregar(B64E);
   RATE = D.muns.map(m => m[2]>=0 && m[3]>0 ? m[2]/m[3]*1e5 : -1);
   ufReg = D.ufs.map(u=>REG[u]);
   map = L.map('mapa', {preferCanvas:true, zoomSnap:.25}).setView([-14.5,-52], 4);
@@ -1453,7 +1659,7 @@ function ligar(){
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {maxZoom:16, attribution:'Mapa base © Esri, HERE, Garmin, OpenStreetMap contributors'}).addTo(map);
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {maxZoom:16, opacity:.8}).addTo(map);
   canvas = L.canvas({padding:.3}); camada = L.layerGroup().addTo(map); tip = L.tooltip({sticky:false, direction:'top', opacity:.97});
-  hashLer(); ligar(); sincronizar(); marcarBotoes(); atualizar(true);
+  hashLer(); ligar(); sincronizar(); marcarBotoes(); atualizar(true); stIniciar();
   map.on('zoomend', () => { if(S.arr) desenhar(S.arr); });
   $('carregando').remove();
   setTimeout(() => { map.invalidateSize(); ajustar(S.idx); }, 50);

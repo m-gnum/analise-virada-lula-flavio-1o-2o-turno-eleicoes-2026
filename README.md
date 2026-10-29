@@ -21,6 +21,7 @@ Seções do painel (todas se recalculam a cada filtro):
 5. **Perfil das áreas** onde cada candidato mais ganhou e menos cresceu: frases em linguagem simples, com as características em negrito ("a combinação de **mais mulheres**, **menos eleitores com 60 anos ou mais** e **renda mais baixa** parece ter tido mais impacto positivo para Lula"), junto das regras numéricas (árvore de regressão), a tabela de perfil médio e os quintis (aberta por padrão).
 6. **Perfil do eleitorado cruzado** (característica 1 × característica 2, em 25 grupos). Por padrão: renda média nas linhas e % de mulheres nas colunas.
 7. **Resumo executivo** do recorte, com as mesmas frases em linguagem simples e um bloco de **Segurança pública (CVLI)**: taxa do recorte contra a média do estado e do Brasil, taxa nos lugares onde cada candidato mais e menos cresceu, e correlação com o crescimento quando é relevante (|r| ≥ 0,3). Os trechos que citam unidades (maiores ganhos, perdas, rankings proporcionais) informam também **quanto cada unidade pesa no recorte** (% dos aptos).
+8. **Análise estatística** (bloco final, com seletores próprios; não muda com os filtros do topo): regressões ponderadas por aptos que medem o efeito de cada característica da área (renda, escolaridade, idade, sexo e, entre cidades, CVLI) na variação de Lula e de Flávio, com intervalo de confiança; comparação do efeito entre regiões; índice de Moran (os locais vizinhos variaram de forma parecida?) e mapa de manchas por cidade (LISA).
 
 ## Fontes de dados
 
@@ -75,7 +76,8 @@ Cada script lê a saída do anterior. Rodar sempre da raiz do projeto, com as de
 | 3 | `scripts/03_perfil_secao.py` | `saida/perfil_secao.parquet` | perfil do eleitorado por seção: mulheres, faixas de idade, escolaridade, cor/raça |
 | 4 | `scripts/04_analise.py` | `saida/secao_analise.parquet`, `saida/locais_dashboard.parquet`, `saida/analise_perfil.json` | junta tudo, calcula as variações em p.p. dos aptos, agrega por local de votação (a tabela que alimenta o painel) e roda análises de apoio (quintis, comparação perdeu × ganhou e uma regressão ponderada) |
 | 7 | `scripts/07_seguranca_sinesp.py` | `saida/seguranca_municipio.parquet` | taxa de CVLI por município: soma as vítimas dos 12 últimos meses fechados, casa os municípios do TSE com o Sinesp (UF + nome) e com o código IBGE, e divide pela população do Censo 2022. **Roda antes do 05** |
-| 5 | `scripts/05_dashboard.py` | `index.html`, `saida/secoes_variacao_votos.csv` | embute a tabela por local e a segurança por município no modelo `scripts/dashboard_template.html` e gera o painel e o CSV por seção |
+| 8 | `scripts/08_analise_estatistica.py` | `saida/estatistica.json` | regressões (cada característica sozinha, todas juntas, dentro da cidade e entre cidades), teste de interação renda × região, índice de Moran e LISA (detalhes em "Análise estatística", abaixo); roda antes do 05 |
+| 5 | `scripts/05_dashboard.py` | `index.html`, `saida/secoes_variacao_votos.csv` | embute a tabela por local, a segurança por município e os resultados estatísticos no modelo `scripts/dashboard_template.html` e gera o painel e o CSV por seção |
 | 6 | `scripts/06_conferencia_tse.py` | texto no terminal | compara os totais da base com os oficiais do TSE por município e zona |
 
 ### Arquivos finais que alimentam o HTML
@@ -103,6 +105,23 @@ Cada script lê a saída do anterior. Rodar sempre da raiz do projeto, com as de
 | `taxa_cvli_100k` | `cvli_12m / pop_2022 × 100.000`. Brasil: 15,3 por 100 mil |
 
 O CSV `saida/secoes_variacao_votos.csv` (por seção, ~118 MB) passa do limite de arquivo do GitHub e por isso não está aqui; é gerado pelo script 05 quando a saída do script 04 está na pasta.
+
+### Análise estatística (`scripts/08_analise_estatistica.py`)
+
+O desenho foi fixado antes de rodar, para não "pescar" resultados. Resposta: variação de cada candidato em p.p. dos aptos. Explicativas: log da renda do responsável, % ensino superior, % sem instrução, % 60+, % 16 a 24 anos, % mulheres (e log da taxa de CVLI no modelo entre cidades). Amostra: 91.507 locais com 100 ou mais aptos e perfil e renda conhecidos.
+
+| Modelo | O que compara | Erro-padrão |
+|---|---|---|
+| Cada característica sozinha | locais, uma variável por vez | agrupado por município |
+| Ajustado | locais, todas as características juntas | agrupado por município |
+| Dentro da cidade | locais da mesma cidade (efeito fixo de município) | agrupado por município |
+| Entre cidades | 5.568 cidades, com CVLI | agrupado por UF |
+
+- Os efeitos são **por +1 desvio-padrão** (ponderado por aptos), em p.p. dos aptos, com IC de 95%. "Efeito relevante" = IC longe de zero **e** efeito de pelo menos 0,5 p.p., porque com 94 mil locais quase tudo é significativo. Correção de Holm nos p-valores, dentro de cada modelo e recorte.
+- Rodado para o Brasil e para cada região, com um teste conjunto de interação (renda × região).
+- **Índice de Moran** (8 vizinhos mais próximos, teste por permutação) para a variação e para o que sobra depois do perfil; **LISA** por cidade (p < 0,01, sem correção para comparações múltiplas).
+- Resultados em `saida/estatistica.json`, embutido no HTML. Para refazer: `python -I scripts/08_analise_estatistica.py` e depois o 05.
+- Leitura: são **associações entre áreas** (falácia ecológica), não causas; os dados são todos os locais, não uma amostra, então o intervalo mede a dependência de quais cidades entram; características correlacionadas (VIF até 4,1) pedem comparar "sozinha" com "ajustada"; o CVLI só existe por cidade.
 
 ### O HTML (`index.html`)
 
@@ -140,6 +159,7 @@ Variação nacional (sem exterior): Lula **+10,33 mi** de votos e Flávio **+3,6
 - **Exterior (ZZ) fora**: os totais cobrem só o Brasil.
 - **Coordenadas**: 623 locais sem coordenada válida foram posicionados no centro da própria cidade; 4 ficaram sem posição e só aparecem nos totais.
 - **Tamanho das unidades**: rankings proporcionais (p.p. dos aptos) podem ser dominados por unidades pequenas. Por isso as frases mostram o peso de cada unidade citada, os rankings e perfis ignoram unidades com menos de 0,5% dos aptos do recorte (quando há unidades suficientes) e as correlações são ponderadas pelo número de aptos.
+- **Análise estatística:** o perfil explica só parte da variação (R² de 22% e 36% no modelo ajustado para o Brasil, para Lula e Flávio), o sinal de algumas características inverte quando as outras entram no modelo e o efeito da renda difere entre regiões. O Moran continua alto depois de descontar o perfil: há estrutura geográfica que o perfil não captura.
 - As **regras de perfil** (árvore de regressão) e os insights são exploratórios, calculados nos dados do filtro atual; não provam causa.
 
 ## Reproduzir
@@ -152,8 +172,9 @@ python -I scripts/02_locais_renda.py
 python -I scripts/03_perfil_secao.py
 python -I scripts/04_analise.py
 python -I scripts/07_seguranca_sinesp.py         # taxa de CVLI por município (roda antes do 05)
+python -I scripts/08_analise_estatistica.py       # regressões, Moran e LISA (roda antes do 05)
 python -I scripts/05_dashboard.py                # gera index.html
 python -I scripts/06_conferencia_tse.py          # confere os totais com o TSE
 ```
 
-Só para regenerar o HTML a partir das tabelas prontas, basta `saida/locais_dashboard.parquet`, `saida/seguranca_municipio.parquet`, o modelo e `python -I scripts/05_dashboard.py`.
+Só para regenerar o HTML a partir das tabelas prontas, basta `saida/locais_dashboard.parquet`, `saida/seguranca_municipio.parquet`, `saida/estatistica.json`, o modelo e `python -I scripts/05_dashboard.py`.

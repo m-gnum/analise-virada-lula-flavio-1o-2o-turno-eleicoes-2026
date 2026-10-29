@@ -7,3 +7,4 @@ __pycache__/
 saida/*
 !saida/locais_dashboard.parquet
 !saida/seguranca_municipio.parquet
+!saida/estatistica.json
