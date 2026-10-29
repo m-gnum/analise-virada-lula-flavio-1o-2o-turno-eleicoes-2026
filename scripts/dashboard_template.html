@@ -420,10 +420,12 @@ function somar(idx){
 /* ---------- KPIs ---------- */
 function kpis(t){
   const pp = v => t.ap ? sgnd(v/t.ap*100,2)+' p.p. dos aptos' : '';
+  const v1 = t.l1+t.f1+t.o1, v2 = t.l2+t.f2;
+  const vv = (x1, x2) => v1 && v2 ? `<br><b>${fmtd(x1/v1*100,1)}% → ${fmtd(x2/v2*100,1)}%</b> dos votos válidos` : '';
   const card = (cls, tit, v, sub) => `<div class="kpi ${cls}"><div class="t">${tit}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
   $('kpis').innerHTML =
-    card('l','Lula: variação de votos', mi(t.dl), `${miAbs(t.l1)} → ${miAbs(t.l2)} · ${pp(t.dl)}`) +
-    card('f','Flávio: variação de votos', mi(t.df), `${miAbs(t.f1)} → ${miAbs(t.f2)} · ${pp(t.df)}`) +
+    card('l','Lula: variação de votos', mi(t.dl), `${miAbs(t.l1)} → ${miAbs(t.l2)} · ${pp(t.dl)}${vv(t.l1,t.l2)}`) +
+    card('f','Flávio: variação de votos', mi(t.df), `${miAbs(t.f1)} → ${miAbs(t.f2)} · ${pp(t.df)}${vv(t.f1,t.f2)}`) +
     card('','Votos dos eliminados no 1º turno', miAbs(t.o1), `${t.ap?fmtd(t.o1/t.ap*100,2):'0'}% dos aptos`) +
     card('','Brancos e nulos: variação', mi(t.db+t.dn), `brancos ${mi(t.db)} · nulos ${mi(t.dn)}`) +
     card('','Abstenção: variação', mi(t.da), `${fmtd(t.ab1/Math.max(t.ap,1)*100,1)}% → ${fmtd(t.ab2/Math.max(t.ap,1)*100,1)}% dos aptos`);
