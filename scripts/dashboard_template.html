@@ -84,6 +84,9 @@ table.comp tr.cab td{background:#f3f5f8;font-weight:600}
 .stbox>div{border-radius:8px;padding:8px 12px;border:1px solid var(--line)}
 .stbox .sim{background:#f0f8f3} .stbox .nao{background:#fff8e6;border-color:#f0dfae}
 .stbox ul{margin:4px 0 0 16px;padding:0}
+#stTab .rel-s,#stTab .rel-n{display:inline-block;min-width:36px;text-align:center;font-weight:600;border-radius:10px;padding:1px 8px}
+#stTab .rel-s{color:#1e6b44;background:#e3f4ea}
+#stTab .rel-n{color:#b42318;background:#fdeceb}
 #mapaLisa{height:430px;border-radius:8px;border:1px solid var(--line)}
 @media(max-width:900px){.stbox{grid-template-columns:1fr}}
 #carregando{position:fixed;inset:0;background:rgba(246,247,249,.92);display:flex;align-items:center;justify-content:center;font-size:16px;z-index:9999}
@@ -331,7 +334,7 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
     <div class="stcards" id="stCards"></div>
     <div id="stForest"></div>
     <div class="ins" id="stTexto"></div>
-    <details style="margin-top:8px"><summary>Como ler o gráfico e a tabela</summary>
+    <details open style="margin-top:8px"><summary>Como ler o gráfico e a tabela</summary>
       <div class="nota">
         Cada ponto é o efeito, em p.p. dos aptos, de aumentar a característica em <b>1 desvio-padrão</b> (uma diferença típica entre áreas); assim as características ficam comparáveis. A barra é o intervalo de confiança de 95%, com erro-padrão agrupado por município (nos modelos entre cidades, por estado). Ponto cheio = efeito relevante (intervalo longe de zero e efeito de pelo menos 0,5 p.p.); ponto vazio = pequeno ou incerto. A faixa cinza marca os efeitos menores que 0,5 p.p. Com tantos locais quase tudo é "estatisticamente significativo", por isso o critério é o tamanho do efeito. O p-valor da tabela tem correção de Holm para comparações múltiplas. Regressão ponderada pelo número de aptos, só com locais de 100 ou mais aptos.
       </div>
@@ -1588,7 +1591,7 @@ function stForest(){
     `<div class="nota">Para ter noção de tamanho: a variação de Lula neste recorte foi, em média, ${sgnd(E.lula.media,1)} p.p. e a de Flávio ${sgnd(E.flavio.media,1)} p.p. dos aptos. Efeitos de 1 p.p. ou menos por desvio-padrão são pequenos perto dessa variação. Lembrete: são diferenças médias entre ${ar}, não o que fez cada eleitor mudar de voto.</div>`;
 
   // tabela
-  const lin = (K, cand) => vars_.map(v=>`<tr><td>${ST_ROT[v]}</td><td>${cand}</td><td>${sgnd(K[v].b,2)}</td><td>${sgnd(K[v].lo,2)} a ${sgnd(K[v].hi,2)}</td><td>${stP(K[v].p_holm)}</td><td>${stRel(K[v])?'sim':'não'}</td></tr>`).join('');
+  const lin = (K, cand) => vars_.map(v=>`<tr><td>${ST_ROT[v]}</td><td>${cand}</td><td>${sgnd(K[v].b,2)}</td><td>${sgnd(K[v].lo,2)} a ${sgnd(K[v].hi,2)}</td><td>${stP(K[v].p_holm)}</td><td>${stRel(K[v])?'<span class="rel-s">sim</span>':'<span class="rel-n">não</span>'}</td></tr>`).join('');
   $('stTab').innerHTML = `<table><tr><th>Característica</th><th>Candidato</th><th>Efeito (p.p. por +1 DP)</th><th>IC 95%</th><th>p (Holm)</th><th>Relevante</th></tr>${lin(A,'Lula')}${lin(B,'Flávio')}</table>`;
 }
 
