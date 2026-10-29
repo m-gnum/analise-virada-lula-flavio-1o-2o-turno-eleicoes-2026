@@ -124,12 +124,13 @@ table.heat td.tot,table.heat th.tot{outline:1px solid var(--line)}
 .hctl{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end;margin:8px 0}
 .hctl label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px}
 table.tu{width:100%;border-collapse:collapse;font-size:12.5px}
+table.tu th:not(:first-child):not(.bc){min-width:92px}
 table.tu th{font-weight:600;color:var(--mut);font-size:11.5px;text-align:right;padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:bottom;line-height:1.3}
 table.tu th small{display:block;font-weight:400}
 table.tu th:first-child,table.tu td:first-child{text-align:left}
 table.tu td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:middle;text-align:right;font-variant-numeric:tabular-nums}
 table.tu td small{display:block;color:var(--mut);font-size:11px;line-height:1.3}
-table.tu td.bc,table.tu th.bc{text-align:left;min-width:340px;width:44%}
+table.tu td.bc,table.tu th.bc{text-align:left;min-width:300px;width:36%}
 table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)}
 .bars{position:relative}
 .bars .br{position:relative;height:15px;margin:1px 0}
@@ -201,7 +202,7 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
 
   <section class="card">
     <h2>Onde cada candidato mais ganhou e mais perdeu: perfil das áreas</h2>
-    <p class="sub">Qual o perfil dos locais de votação em que cada candidato mais cresceu entre os dois turnos, e daqueles em que cresceu menos? "Perdeu mais" aqui significa a menor variação em p.p. dos aptos (quase nenhum local perdeu votos em termos absolutos). As regras combinam várias características ao mesmo tempo.</p>
+    <p class="sub">Qual o perfil dos locais de votação em que cada candidato mais cresceu entre os dois turnos, e daqueles em que cresceu menos? "Perdeu mais" aqui significa a menor variação em p.p. dos aptos (quase nenhum local perdeu votos em termos absolutos). As regras combinam várias características ao mesmo tempo. A taxa de CVLI, quando aparece como característica, é a da cidade: só existe até esse nível e se repete em todos os bairros e locais.</p>
     <div id="perfilResumo" style="font-size:14px"></div>
     <h3 class="h3">Regras: combinações de características com maior e menor variação</h3>
     <p class="nota" style="margin-top:0">Encontradas por uma árvore de regressão (peso = eleitores aptos, até 3 condições por regra, cada regra com pelo menos 2% dos aptos). Cada regra descreve áreas, não pessoas.</p>
@@ -222,7 +223,7 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
 
   <section class="card">
     <h2>Perfil do eleitorado cruzado: característica 1 × característica 2</h2>
-    <p class="sub">Os locais de votação do filtro atual são divididos em 5 grupos (quintis, com o mesmo número de eleitores aptos) por cada característica; o cruzamento forma 25 grupos. Cada célula mostra a variação em p.p. dos eleitores aptos do grupo (cor e número em destaque) e em votos.</p>
+    <p class="sub">A taxa de CVLI, se escolhida, é a da cidade (só existe até esse nível e se repete em bairros e locais). Os locais de votação do filtro atual são divididos em 5 grupos (quintis, com o mesmo número de eleitores aptos) por cada característica; o cruzamento forma 25 grupos. Cada célula mostra a variação em p.p. dos eleitores aptos do grupo (cor e número em destaque) e em votos.</p>
     <div class="hctl">
       <label>Característica 1 (linhas) <select id="fH1"></select></label>
       <label>Característica 2 (colunas) <select id="fH2"></select></label>
@@ -308,7 +309,7 @@ async function carregar(){
 }
 
 let D, c, N, ufReg, map, camada, canvas, tip;
-const S = {reg:'', uf:-1, mun:-1, bai:-1, nivel:'uf', lula:true, flavio:true, h1:'mu', h2:'i4', met:'l', tam:20};
+const S = {reg:'', uf:-1, mun:-1, bai:-1, nivel:'uf', lula:true, flavio:true, h1:'rd', h2:'mu', met:'l', tam:20};
 const CAMPOS = ['sec','ap','ab1','ab2','l1','l2','f1','f2','o1','b1','b2','n1','n2'];
 
 function derivar(g){
@@ -486,38 +487,42 @@ function insMapa(arr){
   ins('iMapa', pos, neg);
 }
 
-/* indicadores da tabela: renda das áreas (% do eleitorado em locais com renda média do responsável < 1, > 3 e > 5 SM) e CVLI do município */
+/* indicadores da tabela: renda das áreas (% do eleitorado em locais com renda média do responsável em cada faixa de SM) e CVLI do município */
+const faixaSM = r => r<SM ? 'w1' : r<=3*SM ? 'w13' : r<=5*SM ? 'w35' : 'w5';
 function indGrupos(idx, nivel, arr){
   const m = new Map(arr.map(g=>[g.k,g]));
-  for(const g of arr){ g.w1 = 0; g.w3 = 0; g.w5 = 0; g.wr = 0; g.ms = new Set(); g.rdv = NaN; }
+  for(const g of arr){ g.w1 = 0; g.w13 = 0; g.w35 = 0; g.w5 = 0; g.wr = 0; g.ms = new Set(); g.rdv = NaN; }
   for(const i of idx){
     const g = m.get(chaveNivel(i,nivel)); if(!g) continue;
     g.ms.add(c.mun[i]);
-    const r = c.rd[i]; if(r>0){ const a = c.ap[i]; g.wr += a; if(r<SM) g.w1 += a; if(r>3*SM) g.w3 += a; if(r>5*SM) g.w5 += a; if(nivel==='loc') g.rdv = r; }
+    const r = c.rd[i]; if(r>0){ g.wr += c.ap[i]; g[faixaSM(r)] += c.ap[i]; if(nivel==='loc') g.rdv = r; }
   }
-  for(const g of arr){ g.p1 = g.wr ? g.w1/g.wr*100 : NaN; g.p3 = g.wr ? g.w3/g.wr*100 : NaN; g.p5 = g.wr ? g.w5/g.wr*100 : NaN; g.sg = segSet(g.ms); }
+  for(const g of arr){ for(const [p,w] of [['p1','w1'],['p13','w13'],['p35','w35'],['p5','w5']]) g[p] = g.wr ? g[w]/g.wr*100 : NaN; g.sg = segSet(g.ms); }
 }
 function refInd(idx, nivel){
-  let w1 = 0, w3 = 0, w5 = 0, wr = 0; const ms = new Set();
-  for(const i of idx){ ms.add(c.mun[i]); const r = c.rd[i]; if(r>0){ const a = c.ap[i]; wr += a; if(r<SM) w1 += a; if(r>3*SM) w3 += a; if(r>5*SM) w5 += a; } }
+  const w = {w1:0, w13:0, w35:0, w5:0}; let wr = 0; const ms = new Set();
+  for(const i of idx){ ms.add(c.mun[i]); const r = c.rd[i]; if(r>0){ wr += c.ap[i]; w[faixaSM(r)] += c.ap[i]; } }
   let refMs = ms;
   // nos bairros e locais a taxa é a da cidade: a comparação é da cidade com a média do estado
   if(nivel==='bai' || nivel==='loc'){ refMs = new Set(); D.muns.forEach((q,j)=>{ if(q[1]===S.uf) refMs.add(j); }); }
-  return {p1: wr?w1/wr*100:NaN, p3: wr?w3/wr*100:NaN, p5: wr?w5/wr*100:NaN, sg: segSet(refMs),
+  const pp = k => wr ? w[k]/wr*100 : NaN;
+  return {p1: pp('w1'), p13: pp('w13'), p35: pp('w35'), p5: pp('w5'), sg: segSet(refMs),
     nomeInd: {uf: S.reg?'da região':'do Brasil', mun:'do estado', bai:'da cidade', loc:'do bairro'}[nivel],
     nomeSg: nivel==='uf' ? (S.reg?'da região':'do Brasil') : 'do estado'};
 }
 const INDS = [
-  {k:'p1', nome:'% do eleitorado em áreas de renda média < 1 SM', val:g=>g.p1, ref:r=>r.p1, tol:2, rel:false, fm:v=>fmtd(v,1)+'%'},
-  {k:'p3', nome:'% do eleitorado em áreas de renda média > 3 SM', val:g=>g.p3, ref:r=>r.p3, tol:2, rel:false, fm:v=>fmtd(v,1)+'%'},
-  {k:'p5', nome:'% do eleitorado em áreas de renda média > 5 SM', val:g=>g.p5, ref:r=>r.p5, tol:1, rel:false, fm:v=>fmtd(v,1)+'%'},
+  {k:'p1', rot:'Menos que 1 SM', nome:'% do eleitorado em áreas de renda média menos que 1 SM', val:g=>g.p1, ref:r=>r.p1, tol:2, rel:false, fm:v=>fmtd(v,1)+'%'},
+  {k:'p13', rot:'Entre 1 SM e 3 SM', nome:'% do eleitorado em áreas de renda média entre 1 SM e 3 SM', val:g=>g.p13, ref:r=>r.p13, tol:3, rel:false, fm:v=>fmtd(v,1)+'%'},
+  {k:'p35', rot:'Entre 3 SM e 5 SM', nome:'% do eleitorado em áreas de renda média entre 3 SM e 5 SM', val:g=>g.p35, ref:r=>r.p35, tol:2, rel:false, fm:v=>fmtd(v,1)+'%'},
+  {k:'p5', rot:'Acima de 5 SM', nome:'% do eleitorado em áreas de renda média acima de 5 SM', val:g=>g.p5, ref:r=>r.p5, tol:1, rel:false, fm:v=>fmtd(v,1)+'%'},
   {k:'sg', nome:'taxa de CVLI', val:g=>g.sg.taxa, ref:r=>r.sg.taxa, tol:.15, rel:true, fm:v=>fmtd(v,1)}
 ];
 /* o que as unidades da lista têm em comum em relação à média: compara o conjunto (eleitores somados) com a média e, quando todas ficam do mesmo lado, diz isso */
 function carac(lst, ref, nivel){
   if(lst.length<2 || nivel==='loc') return [];
   const soma = k => lst.reduce((t,g)=>t+g[k],0);
-  const pool = {p1: soma('wr')?soma('w1')/soma('wr')*100:NaN, p3: soma('wr')?soma('w3')/soma('wr')*100:NaN, p5: soma('wr')?soma('w5')/soma('wr')*100:NaN, sg: segSet(new Set(lst.flatMap(g=>[...g.ms])))};
+  const pool = {sg: segSet(new Set(lst.flatMap(g=>[...g.ms])))};
+  for(const [p,w] of [['p1','w1'],['p13','w13'],['p35','w35'],['p5','w5']]) pool[p] = soma('wr') ? soma(w)/soma('wr')*100 : NaN;
   const out = [];
   for(const d of INDS){
     if(d.k==='sg' && nivel==='bai') continue; // todos os bairros têm a taxa da mesma cidade
@@ -541,7 +546,7 @@ function gUnid(idx){
   if(nivel==='uf'){ arr.sort((a,b)=>b.dl-a.dl); tit = 'Variação por estado'; }
   else { arr.sort((a,b)=>(Math.abs(b.dl)+Math.abs(b.df))-(Math.abs(a.dl)+Math.abs(a.df))); arr = arr.slice(0,20); tit = nivel==='mun' ? 'Variação nas 20 cidades com maior movimento' : nivel==='bai' ? 'Variação nos 20 bairros com maior movimento' : 'Variação nos 20 locais com maior movimento'; }
   $('tComp').textContent = tit;
-  $('subUnid').textContent = 'Cada linha mostra a renda das áreas, a taxa de mortes violentas (CVLI) e a variação de votos; as barras trazem a variação em votos, com o rótulo em p.p. dos eleitores aptos da própria unidade.';
+  $('subUnid').textContent = 'Cada linha mostra a renda das áreas, a taxa de mortes violentas (CVLI) e a variação de votos; as barras trazem a variação em votos, com o rótulo em p.p. dos eleitores aptos da própria unidade. A taxa de CVLI só existe até o nível de cidade: nos bairros e locais, o valor da cidade se repete.';
   // escala das barras (folga nas pontas para os rótulos)
   const vals = arr.flatMap(g=>[S.lula?g.dl:0, S.flavio?g.df:0]), vmax = Math.max(0,...vals), vmin = Math.min(0,...vals), span = (vmax-vmin)||1;
   const lo = vmin<0 ? vmin-span*.7 : 0, hi = vmax+span*.7, xp = v => (v-lo)/(hi-lo)*100, z0 = xp(0);
@@ -558,18 +563,18 @@ function gUnid(idx){
     return `<b>${fmtd(t,1)}</b><small${baixa}>${fmt(g.sg.v)} vítimas${g.sg.v<10?' (base pequena)':''}</small>` + (isFinite(r) ? `<small class="${r>=1.15?'up':r<.87?'dn':''}">${sgnd(d,0)}% · ${rotSeg(r)}</small>` : '');
   };
   let h = `<table class="tu"><tr><th>${{uf:'Estado',mun:'Cidade',bai:'Bairro',loc:'Local de votação'}[nivel]}</th>`
-    + (nivel==='loc' ? `<th colspan="3">Renda média do responsável (raio de 1 km)</th>` : `<th>Renda média < 1 SM<small>% do eleitorado · e p.p. vs. média ${ref.nomeInd}</small></th><th>Renda média > 3 SM<small>% do eleitorado · e p.p. vs. média ${ref.nomeInd}</small></th><th>Renda média > 5 SM<small>% do eleitorado · e p.p. vs. média ${ref.nomeInd}</small></th>`)
-    + `<th>CVLI por 100 mil hab.<small>12 meses · e % vs. média ${ref.nomeSg}</small></th>`
+    + (nivel==='loc' ? `<th colspan="4">Renda média do responsável (raio de 1 km)</th>` : INDS.filter(d=>d.rot).map(d=>`<th>Renda média: ${d.rot[0].toLowerCase()+d.rot.slice(1)}<small>% do eleitorado</small></th>`).join(''))
+    + `<th>CVLI por 100 mil hab.<small>12 meses, só até a cidade</small></th>`
     + `<th class="bc">Variação de votos<small><span class="lg" style="background:${COR.lula}"></span>Lula<span class="lg" style="background:${COR.flavio}"></span>Flávio</small></th></tr>`;
   for(const g of arr){
     h += `<tr><td>${esc(g.nome)}</td>`
-      + (nivel==='loc' ? `<td colspan="3" style="text-align:center">${isFinite(g.rdv) ? `<b>${rendaTxt(g.rdv)}</b>` : '–'}</td>` : `<td>${ci(g.p1,ref.p1)}</td><td>${ci(g.p3,ref.p3)}</td><td>${ci(g.p5,ref.p5)}</td>`)
+      + (nivel==='loc' ? `<td colspan="4" style="text-align:center">${isFinite(g.rdv) ? `<b>${rendaTxt(g.rdv)}</b>` : '–'}</td>` : INDS.filter(d=>d.rot).map(d=>`<td>${ci(g[d.k],ref[d.k])}</td>`).join(''))
       + `<td class="sg">${cs(g)}</td>`
       + `<td class="bc"><div class="bars"><div class="zero" style="left:${z0}%"></div>${S.lula?barra(g.dl,COR.lula,g,'Lula'):''}${S.flavio?barra(g.df,COR.flavio,g,'Flávio'):''}</div></td></tr>`;
   }
   $('tUnid').innerHTML = h + '</table>';
-  $('notaUnid').innerHTML = `As colunas de renda mostram a parte dos eleitores aptos que votam em locais cuja renda média do responsável pelo domicílio (raio de 1 km, Censo 2022, SM = R$ ${fmt(SM)}) fica abaixo de 1 SM, acima de 3 SM ou acima de 5 SM, e a diferença em p.p. para a média ${ref.nomeInd}. Não é a % de domicílios nem de pessoas. `
-    + `CVLI = homicídio doloso, feminicídio, latrocínio e lesão corporal seguida de morte (vítimas, out/2025 a set/2026, Sinesp-VDE) por 100 mil habitantes (Censo 2022); é um dado do município inteiro${nivel==='bai'||nivel==='loc' ? ', então se repete em todos os bairros e locais, e a comparação é da cidade com a média do estado' : ''}. Em cidades pequenas a taxa oscila muito com poucos casos.`;
+  $('notaUnid').innerHTML = `As colunas de renda mostram a parte dos eleitores aptos que votam em locais cuja renda média do responsável pelo domicílio (raio de 1 km, Censo 2022, SM = R$ ${fmt(SM)}) fica em cada faixa (menos que 1 SM, entre 1 SM e 3 SM, entre 3 SM e 5 SM e acima de 5 SM; as quatro somam 100%), e, embaixo de cada valor, a diferença em p.p. para a média ${ref.nomeInd}. Não é a % de domicílios nem de pessoas. `
+    + `CVLI = homicídio doloso, feminicídio, latrocínio e lesão corporal seguida de morte (vítimas, out/2025 a set/2026, Sinesp-VDE) por 100 mil habitantes (Censo 2022), com a diferença % para a média ${ref.nomeSg} embaixo; é um dado do município inteiro, que só existe até o nível de cidade${nivel==='bai'||nivel==='loc' ? ': aqui ele se repete em todos os bairros e locais, e a comparação é da cidade com a média do estado' : ' (abaixo da cidade, o valor se repete)'}. Em cidades pequenas a taxa oscila muito com poucos casos.`;
   // insights
   const pos=[], neg=[], minAp = todas.reduce((s,g)=>s+g.ap,0)*0.005, un_ = un[nivel];
   const com = (lst) => { const k = carac(lst, ref, nivel); return k.length ? `, que têm ${k.join('; ')}` : ''; };
@@ -591,7 +596,23 @@ function gUnid(idx){
     if(!fim.length) neg.push(`${cl(cor,nm)}: não perdeu votos em nenhuma das ${todas.length} unidades.`);
     else neg.push(`${cl(cor,nm)} perdeu votos em ${q} de ${todas.length} unidades (${fmtd(q/todas.length*100,0)}%).`);
   }
-  ins('iUnid', pos, neg, ['Os rankings acima consideram todas as unidades do filtro, não só as exibidas na tabela. "Proporcional" ignora unidades com menos de 0,5% dos aptos do filtro. "Acima/abaixo da média" só aparece quando todas as unidades citadas ficam do mesmo lado da média; descreve as áreas, não os eleitores.']);
+  const info = [];
+  const elegiveis = todas.filter(g=>g.ap>=minAp && isFinite(g.p1));
+  if(nivel!=='loc' && elegiveis.length>=8){
+    for(const [k,nm,cor,on] of [['dl','Lula',COR.lula,S.lula],['df','Flávio',COR.flavio,S.flavio]]){
+      if(!on) continue;
+      const y = elegiveis.map(g=>g[k]/g.ap*100), w = elegiveis.map(g=>g.ap);
+      let melhor = null;
+      for(const d of INDS){
+        if(d.k==='sg' && nivel==='bai') continue;
+        const x = elegiveis.map(d.val); if(x.some(v=>!isFinite(v))) continue;
+        const r = corrP(x, y, w); if(isFinite(r) && (!melhor || Math.abs(r)>Math.abs(melhor.r))) melhor = {d, r};
+      }
+      if(melhor && Math.abs(melhor.r)>=.4) info.push(`${cl(cor,nm)}: entre ${elegiveis.length} ${un_}, o crescimento em p.p. tende a ser <b>${melhor.r>0?'maior':'menor'}</b> quanto maior é a <b>${melhor.d.nome}</b> (associação entre áreas, correlação ${fmtd(melhor.r,2)}; não indica causa).`);
+    }
+  }
+  info.push('Os rankings acima consideram todas as unidades do filtro, não só as exibidas na tabela. "Proporcional" ignora unidades com menos de 0,5% dos aptos do filtro. "Acima/abaixo da média" compara o conjunto das unidades citadas com a média e diz "todas" quando cada uma fica do mesmo lado; descreve as áreas, não os eleitores.');
+  ins('iUnid', pos, neg, info);
 }
 
 /* ---------- perfil cruzado (mapa de calor) ---------- */
@@ -606,7 +627,7 @@ const PERFIL = {
   e2:{rot:'% com ensino médio', curto:'% ensino médio', f:i=>c.e2[i]/c.pe[i]*100},
   e3:{rot:'% com ensino superior', curto:'% ensino superior', f:i=>c.e3[i]/c.pe[i]*100},
   rd:{rot:'Renda média do responsável (R$ e salários mínimos, raio de 1 km)', curto:'Renda média do responsável', f:i=>c.rd[i], ok:i=>c.rd[i]>0, renda:true, med:true},
-  sg:{rot:'Mortes violentas no município: taxa de CVLI por 100 mil habitantes (últimos 12 meses)', curto:'Taxa de CVLI do município', f:i=>RATE[c.mun[i]], ok:i=>RATE[c.mun[i]]>=0, med:true}
+  sg:{rot:'Mortes violentas: taxa de CVLI por 100 mil habitantes (12 meses; dado da cidade, que se repete em bairros e locais)', curto:'Taxa de CVLI do município', f:i=>RATE[c.mun[i]], ok:i=>RATE[c.mun[i]]>=0, med:true}
 };
 const fv = (k,v) => PERFIL[k].renda ? 'R$ '+fmt(v)+' · '+fmtd(v/SM,1)+' SM' : k==='sg' ? fmtd(v,1)+' por 100 mil' : fmtd(v,0)+'%';
 const METS = {
@@ -682,7 +703,7 @@ function heat(idx){
   $('heatEscala').innerHTML = mesmo
     ? `<span>${fmtd(vs[0]>=0?escala.min:-escala.max,2)} p.p.</span><i style="background:linear-gradient(90deg,${vs[0]>=0?'#fff,'+M.cor:M.neg+',#fff'})"></i><span>${fmtd(vs[0]>=0?escala.max:-escala.min,2)} p.p. (${esc(M.rot)}, escala do menor ao maior valor das 25 células)</span>`
     : `<span>${esc(M.rot)}: queda</span><i style="background:linear-gradient(90deg,${gr})"></i><span>alta</span><span>(±${fmtd(max,2)} p.p. dos aptos nas pontas)</span>`;
-  $('notaHeat').textContent = `${fmt(base.length)} locais, ${fmt(tot.ap)} eleitores aptos. Q1 = 20% dos eleitores nos locais com o menor valor da característica; Q5 = 20% nos locais com o maior. Abaixo de cada Q, o valor médio. Células com menos de 5 locais aparecem vazias. Cada característica é dividida em quintis separadamente, então grupos de características correlacionadas (por exemplo, superior e renda) podem ter poucos locais nos cantos.`;
+  $('notaHeat').textContent = `${(k1==='sg'||k2==='sg') ? 'A taxa de CVLI é da cidade e se repete em todos os locais dela (não existe por bairro), então esses grupos juntam cidades inteiras. ' : ''}${fmt(base.length)} locais, ${fmt(tot.ap)} eleitores aptos. Q1 = 20% dos eleitores nos locais com o menor valor da característica; Q5 = 20% nos locais com o maior. Abaixo de cada Q, o valor médio. Células com menos de 5 locais aparecem vazias. Cada característica é dividida em quintis separadamente, então grupos de características correlacionadas (por exemplo, superior e renda) podem ter poucos locais nos cantos.`;
 
   // insights
   const lista = [];
@@ -845,7 +866,7 @@ function cartao(P, folha, y, dv, alta, cor, mediaPP, lay){
   const chips = regraTxt(folha.conds).map(t=>`<span class="chip">${esc(t)}</span>`).join('');
   return `<div class="rc" style="border-left-color:${alta?cor:CINZA}">
     <div class="rt"><span class="${alta?'sp':'sn'}">${alta?'▲':'▼'}</span> <b>${sgnd(mean,2)} p.p.</b> · ${sgn(dvot)} votos <span class="rm">(média do filtro: ${sgnd(mediaPP,2)} p.p.)</span></div>
-    ${lay?`<div class="rl">Em termos simples: áreas com ${lay}.</div>`:''}
+    ${lay?`<div class="rl">Áreas com ${lay}.</div>`:''}
     <div class="rr">${chips || '<span class="rm">sem regra: todos os locais</span>'}</div>
     <div class="rm">${fmt(folha.rows.length)} locais · ${fmtd(folha.W/P.tot*100,1)}% dos aptos${consistencia(P, folha, y, alta)}</div></div>`;
 }
@@ -919,7 +940,7 @@ function perfilAreas(idx){
     const frase = f => regraTxt(f.conds).join(', ') || 'todos os locais';
     const lg = top[0] ? layGrupo(resumirJ(base, top[0].rows, dv), rAll, P, 4) : [], lp = low[0] ? layGrupo(resumirJ(base, low[0].rows, dv), rAll, P, 4) : [];
     RESUMO_REGRAS.push({nome, cor, ganho: frase(top[0]||{conds:[]}), perda: low[0] ? frase(low[0]) : '', lg: juntar(lg), lp: juntar(lp)});
-    if(lg.length) resumo.push(`<p class="lay"><b style="color:${cor}">${nome}</b>, em termos simples: a combinação de ${juntar(lg)} parece ter tido <b>mais impacto positivo</b> para ${nome}${lp.length?`; já a combinação de ${juntar(lp)} parece ter tido <b>menos impacto positivo</b> (foi onde ${nome} menos cresceu)`:''}.</p>`);
+    if(lg.length) resumo.push(`<p class="lay"><b style="color:${cor}">${nome}</b>: a combinação de ${juntar(lg)} parece ter tido <b>mais impacto positivo</b> para ${nome}${lp.length?`; já a combinação de ${juntar(lp)} parece ter tido <b>menos impacto positivo</b> (foi onde ${nome} menos cresceu)`:''}.</p>`);
     resumo.push(`<p><b style="color:${cor}">${nome}</b> ganhou mais em áreas com <b>${esc(frase(top[0]||{conds:[]}))}</b>${low.length?` e teve a menor variação em áreas com <b>${esc(frase(low[0]))}</b>`:''}.</p>`);
     const dt = difs(rT, rA, P, 3), db = difs(rB, rA, P, 3);
     const d1 = o => `${esc(PERFIL[o.k].curto)} ${fvv(o.k,o.v)} contra ${fvv(o.k,o.a)} na média`;
@@ -938,7 +959,7 @@ function perfilAreas(idx){
     info.push(`${cl(cor,nome)}: as ${folhas.length} regras acima explicam ${fmtd(r2*100,0)}% da variação entre locais; o restante vem de fatores que não estão nos dados (campanha local, histórico, outros).`);
   }
   info.push(`${fmt(n)} locais com perfil e renda no filtro (${fmt(idxPerdidos(idx,n))} sem renda do Censo ou sem taxa de CVLI ficaram de fora desta seção).`);
-  $('perfilResumo').innerHTML = resumo.join('') + `<p class="nota">Como ler: "mais" e "menos" comparam o grupo de áreas com a média do filtro atual. A frase descreve <b>tipos de área</b>, não eleitores: não prova que a característica causou o resultado nem que as pessoas com ela votaram assim. A taxa de mortes violentas (CVLI) é a do município inteiro, igual para todos os locais da mesma cidade.</p>`;
+  $('perfilResumo').innerHTML = resumo.join('') + `<p class="nota">Como ler: "mais" e "menos" comparam o grupo de áreas com a média do filtro atual. A frase descreve <b>tipos de área</b>, não eleitores: não prova que a característica causou o resultado nem que as pessoas com ela votaram assim. A taxa de mortes violentas (CVLI) só existe até o nível de cidade: abaixo disso (bairros e locais) o valor da cidade se repete, e por isso ela deixa de distinguir áreas dentro de uma mesma cidade.</p>`;
   $('regras').innerHTML = cartoes.join('');
   $('tabComp').innerHTML = h + `</table><p class="nota">Cor = diferença para a média de todos os locais do filtro, em desvios-padrão entre locais (cor do candidato = acima da média; cinza = abaixo). "Onde mais ganhou" e "menor variação" são os ${S.tam}% de eleitores aptos em locais com a maior e a menor variação em p.p. Renda em R$ e em salários mínimos (SM, R$ 1.621).</p>`;
   $('quintPanels').innerHTML = quintHtml.join('');
@@ -1169,7 +1190,7 @@ function resumoEscopo(idx, nivel, titulo, unico){
 function resumoExecutivo(idx){
   if(!idx.length){ $('resumo').innerHTML = ''; return; }
   if(!S.reg && S.uf<0 && S.mun<0 && S.bai<0){
-    $('resumoSub').textContent = 'Sem filtros: um resumo para cada uma das 5 regiões do país. Os números são sempre sobre o filtro atual.';
+    $('resumoSub').textContent = 'Sem filtros: um resumo para cada uma das 5 regiões do país. Os números são sempre sobre o filtro atual. A taxa de CVLI é da cidade: não existe por bairro.';
     $('resumo').innerHTML = REGS.map(r => resumoEscopo(idx.filter(i=>ufReg[c.uf[i]]===r), 'uf', `Região ${r}`, false)).join('');
     return;
   }
@@ -1179,7 +1200,7 @@ function resumoExecutivo(idx){
   else if(S.mun>=0) titulo = `Cidade de ${esc(D.muns[S.mun][0])}/${D.ufs[D.muns[S.mun][1]]}`;
   else if(S.uf>=0) titulo = `Estado ${D.ufs[S.uf]}`;
   else titulo = `Região ${S.reg}`;
-  $('resumoSub').textContent = 'Resumo do recorte escolhido nos filtros. Muda a cada filtro aplicado.';
+  $('resumoSub').textContent = 'Resumo do recorte escolhido nos filtros. Muda a cada filtro aplicado. A taxa de CVLI é da cidade: não existe por bairro.';
   $('resumo').innerHTML = resumoEscopo(idx, nivel, titulo, true);
 }
 
