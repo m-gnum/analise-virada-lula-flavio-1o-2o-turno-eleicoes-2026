@@ -132,7 +132,7 @@ table.tu th small{display:block;font-weight:400}
 table.tu th:first-child,table.tu td:first-child{text-align:left}
 table.tu td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:middle;text-align:right;font-variant-numeric:tabular-nums}
 table.tu td small{display:block;color:var(--mut);font-size:11px;line-height:1.3}
-table.tu td.bc,table.tu th.bc{text-align:left;min-width:300px;width:36%}
+table.tu td.bc,table.tu th.bc{text-align:left;min-width:280px;width:26%}
 table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)}
 .bars{position:relative}
 .bars .br{position:relative;height:15px;margin:1px 0}
@@ -556,15 +556,18 @@ function gUnid(idx){
   if(nivel==='uf'){ arr.sort((a,b)=>b.dl-a.dl); tit = 'Variação por estado'; }
   else { arr.sort((a,b)=>(Math.abs(b.dl)+Math.abs(b.df))-(Math.abs(a.dl)+Math.abs(a.df))); arr = arr.slice(0,20); tit = nivel==='mun' ? 'Variação nas 20 cidades com maior movimento' : nivel==='bai' ? 'Variação nos 20 bairros com maior movimento' : 'Variação nos 20 locais com maior movimento'; }
   $('tComp').textContent = tit;
-  $('subUnid').textContent = 'Cada linha mostra a renda das áreas, a taxa de mortes violentas (CVLI) e a variação de votos; as barras trazem a variação em votos, com o rótulo em p.p. dos eleitores aptos da própria unidade. A taxa de CVLI só existe até o nível de cidade: nos bairros e locais, o valor da cidade se repete.';
-  // escala das barras (folga nas pontas para os rótulos)
-  const vals = arr.flatMap(g=>[S.lula?g.dl:0, S.flavio?g.df:0]), vmax = Math.max(0,...vals), vmin = Math.min(0,...vals), span = (vmax-vmin)||1;
-  const lo = vmin<0 ? vmin-span*.7 : 0, hi = vmax+span*.7, xp = v => (v-lo)/(hi-lo)*100, z0 = xp(0);
-  const barra = (v, cor, g, nm) => {
-    const a = xp(Math.min(0,v)), b = xp(Math.max(0,v));
+  $('subUnid').textContent = 'Cada linha mostra a renda das áreas, a taxa de mortes violentas (CVLI) e a variação de votos; as barras trazem a variação em votos de Lula e Flávio e, ao lado, de onde vieram os votos (os mesmos dados do gráfico "De onde vieram os votos": eleitores dos candidatos eliminados no 1º turno e queda de brancos, nulos e abstenção; valor negativo = a categoria cresceu), com o rótulo em p.p. dos eleitores aptos da própria unidade. A taxa de CVLI só existe até o nível de cidade: nos bairros e locais, o valor da cidade se repete.';
+  // escala das barras (folga nas pontas para os rótulos); cada coluna de barras tem a sua escala
+  const escala = vals => { const vmax = Math.max(0,...vals), vmin = Math.min(0,...vals), span = (vmax-vmin)||1, lo = vmin<0 ? vmin-span*.7 : 0, hi = vmax+span*.7; return {xp: v=>(v-lo)/(hi-lo)*100, z0: (0-lo)/(hi-lo)*100}; };
+  const barra = (E, v, cor, g, nm) => {
+    const a = E.xp(Math.min(0,v)), b = E.xp(Math.max(0,v));
     const ls = v>=0 ? `left:${b+.6}%` : `right:${100-a+.6}%`;
     return `<div class="br" title="${esc(g.nome)} · ${nm}: ${fmt(v)} votos, ${sgnd(v/g.ap*100,2)} p.p. dos ${fmt(g.ap)} aptos"><i style="left:${a}%;width:${Math.max(b-a,.2)}%;background:${cor}"></i><span style="${ls}">${kk(v)} · ${pct(v,g.ap)}</span></div>`;
   };
+  const EV = escala(arr.flatMap(g=>[S.lula?g.dl:0, S.flavio?g.df:0]));
+  // de onde vieram os votos (mesmos dados do gráfico "De onde vieram os votos"): eliminados no 1º turno e queda de brancos, nulos e abstenção
+  const FONTES = [['Eliminados no 1º turno', g=>g.o1, '#374151'], ['Queda de brancos', g=>-g.db, '#7c5cbf'], ['Queda de nulos', g=>-g.dn, '#b39ddb'], ['Queda de abstenção', g=>-g.da, COR.ambar]];
+  const EF = escala(arr.flatMap(g=>FONTES.map(f=>f[1](g))));
   const ci = (v, r) => isFinite(v) ? `<b>${fmtd(v,1)}%</b><small>${sgnd(v-r,1)} p.p.</small>` : '–';
   const cs = g => {
     const t = g.sg.taxa; if(!isFinite(t)) return '–';
@@ -575,12 +578,14 @@ function gUnid(idx){
   let h = `<table class="tu"><tr><th>${{uf:'Estado',mun:'Cidade',bai:'Bairro',loc:'Local de votação'}[nivel]}</th>`
     + (nivel==='loc' ? `<th colspan="4">Renda média do responsável (raio de 1 km)</th>` : INDS.filter(d=>d.rot).map(d=>`<th>Renda média: ${d.rot[0].toLowerCase()+d.rot.slice(1)}<small>% do eleitorado</small></th>`).join(''))
     + `<th>CVLI por 100 mil hab.<small>12 meses, só até a cidade</small></th>`
-    + `<th class="bc">Variação de votos<small><span class="lg" style="background:${COR.lula}"></span>Lula<span class="lg" style="background:${COR.flavio}"></span>Flávio</small></th></tr>`;
+    + `<th class="bc">Variação de votos<small><span class="lg" style="background:${COR.lula}"></span>Lula<span class="lg" style="background:${COR.flavio}"></span>Flávio</small></th>`
+    + `<th class="bc">De onde vieram os votos<small>${FONTES.map(f=>`<span class="lg" style="background:${f[2]}"></span>${f[0]}`).join(' ')}</small></th></tr>`;
   for(const g of arr){
     h += `<tr><td>${esc(g.nome)}</td>`
       + (nivel==='loc' ? `<td colspan="4" style="text-align:center">${isFinite(g.rdv) ? `<b>${rendaTxt(g.rdv)}</b>` : '–'}</td>` : INDS.filter(d=>d.rot).map(d=>`<td>${ci(g[d.k],ref[d.k])}</td>`).join(''))
       + `<td class="sg">${cs(g)}</td>`
-      + `<td class="bc"><div class="bars"><div class="zero" style="left:${z0}%"></div>${S.lula?barra(g.dl,COR.lula,g,'Lula'):''}${S.flavio?barra(g.df,COR.flavio,g,'Flávio'):''}</div></td></tr>`;
+      + `<td class="bc"><div class="bars"><div class="zero" style="left:${EV.z0}%"></div>${S.lula?barra(EV,g.dl,COR.lula,g,'Lula'):''}${S.flavio?barra(EV,g.df,COR.flavio,g,'Flávio'):''}</div></td>`
+      + `<td class="bc"><div class="bars"><div class="zero" style="left:${EF.z0}%"></div>${FONTES.map(f=>barra(EF,f[1](g),f[2],g,f[0])).join('')}</div></td></tr>`;
   }
   $('tUnid').innerHTML = h + '</table>';
   $('notaUnid').innerHTML = `As colunas de renda mostram a parte dos eleitores aptos que votam em locais cuja renda média do responsável pelo domicílio (raio de 1 km, Censo 2022, SM = R$ ${fmt(SM)}) fica em cada faixa (menos que 1 SM, entre 1 SM e 3 SM, entre 3 SM e 5 SM e acima de 5 SM; as quatro somam 100%), e, embaixo de cada valor, a diferença em p.p. para a média ${ref.nomeInd}. Não é a % de domicílios nem de pessoas. `
@@ -607,6 +612,13 @@ function gUnid(idx){
     else neg.push(`${cl(cor,nm)} perdeu votos em ${q} de ${todas.length} unidades (${fmtd(q/todas.length*100,0)}%).`);
   }
   const info = [];
+  { // origem do ganho conjunto nas unidades listadas na tabela
+    const G = arr.reduce((t,g)=>t+g.dl+g.df,0);
+    if(G>0 && arr.length>1){
+      const f = [['dos eleitores dos candidatos eliminados no 1º turno', arr.reduce((t,g)=>t+g.o1,0)], ['da queda da abstenção', -arr.reduce((t,g)=>t+g.da,0)], ['da queda de brancos e nulos', -arr.reduce((t,g)=>t+g.db+g.dn,0)]].sort((a,b)=>b[1]-a[1]);
+      info.push(`Nas ${arr.length} ${un_} da tabela, o ganho conjunto de Lula e Flávio (${mi(G)}) veio principalmente ${f[0][0]} (${fmtd(f[0][1]/G*100,0)}%), depois ${f[1][0]} (${fmtd(f[1][1]/G*100,0)}%) e ${f[2][0]} (${fmtd(f[2][1]/G*100,0)}%).`);
+    }
+  }
   const elegiveis = todas.filter(g=>g.ap>=minAp && isFinite(g.p1));
   if(nivel!=='loc' && elegiveis.length>=8){
     for(const [k,nm,cor,on] of [['dl','Lula',COR.lula,S.lula],['df','Flávio',COR.flavio,S.flavio]]){
