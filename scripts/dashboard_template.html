@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Lula x Flávio: variação de votos entre os turnos (2026)</title>
+<title>[Eleições 2026] Lula x Flávio: Como se deu a virada entre o 1º e o 2º turno</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
@@ -16,7 +16,9 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 header{padding:18px 16px 6px;max-width:1400px;margin:0 auto}
-h1{margin:0;font-size:22px;letter-spacing:-.2px}
+h1{margin:0;font-size:22px;letter-spacing:-.2px;text-align:center}
+h1.secao{margin:34px 0 14px}
+header .sub.desc{text-align:center}
 h2{margin:0 0 4px;font-size:16px}
 .sub{color:var(--mut);margin:4px 0 0}
 .fontes{font-size:12px;line-height:1.5;word-break:break-word}
@@ -154,8 +156,8 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
 <body>
 <div id="carregando">Carregando dados…</div>
 <header>
-  <h1>Lula x Flávio: quanto cada um ganhou ou perdeu entre o 1º e o 2º turno</h1>
-  <p class="sub">Presidente da República, 2026. Variação = votos no 2º turno − votos no 1º turno, por local de votação, cidade, estado e região. Dados do TSE (resultados e perfil do eleitorado), do Censo 2022 (IBGE: renda e população) e do Sinesp-VDE (Ministério da Justiça: taxa de mortes violentas, CVLI, por cidade).</p>
+  <h1>[Eleições 2026] Lula x Flávio: Como se deu a virada entre o 1º e o 2º turno</h1>
+  <p class="sub desc">Análise das Eleições para Presidente da República em 2026, identificando os destaques da <b>variação de votos entre 1º turno e o 2º turno por local de votação, cidade, estado e região</b>. Além disso, cruza as variações com dados demográficos do eleitorado e dos locais de votação, para tentar entender os perfis onde a mudança foi mais significativa. Dados do TSE (resultados e perfil do eleitorado), do Censo 2022 (IBGE: renda e população) e do Sinesp-VDE (Ministério da Justiça: taxa de mortes violentas, CVLI, por cidade).</p>
   <p class="sub fontes"><b>Fontes:</b>
     TSE, resultados: <a href="https://dadosabertos.tse.jus.br/dataset/resultados-2026" target="_blank" rel="noopener">https://dadosabertos.tse.jus.br/dataset/resultados-2026</a> ·
     TSE, eleitorado e locais de votação: <a href="https://dadosabertos.tse.jus.br/dataset/eleitorado-2026" target="_blank" rel="noopener">https://dadosabertos.tse.jus.br/dataset/eleitorado-2026</a> ·
@@ -190,6 +192,8 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
     <button id="bLink">Copiar link desta visão</button>
   </section>
 
+  <h1 class="secao">Números Gerais da Variação</h1>
+
   <section class="topo">
     <div class="topoL"><div class="kpis" id="kpis"></div><div class="ins" id="iBalanco" style="margin-top:0"></div></div>
     <div class="card">
@@ -199,6 +203,8 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
       <p class="nota" id="notaBalanco"></p>
     </div>
   </section>
+
+  <h1 class="secao">Mapa de Variação | Variação por Estado/Cidade/Bairro/Local</h1>
 
   <section class="grid2">
     <div class="card">
@@ -239,6 +245,8 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
     <div class="ins" id="iUnid"></div>
   </section>
 
+  <h1 class="secao">“Perfil da Virada” | Perfil dos Locais de Votação com variações mais significativas</h1>
+
   <section class="card">
     <h2>Onde cada candidato mais ganhou e mais perdeu: perfil das áreas</h2>
     <p class="sub">Qual o perfil dos locais de votação em que cada candidato mais cresceu entre os dois turnos, e daqueles em que cresceu menos? "Perdeu mais" aqui significa a menor variação em p.p. dos aptos (quase nenhum local perdeu votos em termos absolutos). As regras combinam várias características ao mesmo tempo. A taxa de CVLI, quando aparece como característica, é a da cidade: só existe até esse nível e se repete em todos os bairros e locais.</p>
@@ -277,6 +285,8 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
     <p class="nota" id="notaHeat"></p>
     <div class="ins" id="iHeat"></div>
   </section>
+
+  <h1 class="secao">Resumo Executivo</h1>
 
   <section class="card">
     <h2>Resumo executivo</h2>
