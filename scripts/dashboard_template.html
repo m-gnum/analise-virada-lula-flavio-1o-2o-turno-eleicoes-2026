@@ -21,6 +21,10 @@ h2{margin:0 0 4px;font-size:16px}
 .sub{color:var(--mut);margin:4px 0 0}
 .fontes{font-size:12px;line-height:1.5;word-break:break-word}
 .fontes a{color:var(--flavio)}
+.comoler{margin-top:8px;background:#f1f7ff;border:1px solid #cfe0f5;border-radius:8px;padding:8px 12px;font-size:13px}
+.comoler ul{margin:4px 0 0 18px;padding:0}
+.rank td small.vol{display:block;color:var(--mut);font-size:11px;line-height:1.3}
+.vira{color:#b45309;font-weight:600}
 main{max-width:1400px;margin:0 auto;padding:8px 16px 40px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:14px}
 .filtros{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
@@ -132,6 +136,8 @@ table.tu th small{display:block;font-weight:400}
 table.tu th:first-child,table.tu td:first-child{text-align:left}
 table.tu td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:middle;text-align:right;font-variant-numeric:tabular-nums}
 table.tu td small{display:block;color:var(--mut);font-size:11px;line-height:1.3}
+table.tu th:nth-child(2),table.tu td:nth-child(2){min-width:128px}
+table.tu th:nth-child(3),table.tu td:nth-child(3){min-width:170px;text-align:left;white-space:nowrap}
 table.tu td.bc,table.tu th.bc{text-align:left;min-width:280px;width:26%}
 table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)}
 .bars{position:relative}
@@ -158,6 +164,13 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
     Sinesp-VDE (CVLI, out/2025 a set/2026): <a href="https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/dados-nacionais-1/base-de-dados-e-notas-metodologicas-dos-gestores-estaduais-sinesp-vde-2022-e-2023" target="_blank" rel="noopener">https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/dados-nacionais-1/base-de-dados-e-notas-metodologicas-dos-gestores-estaduais-sinesp-vde-2022-e-2023</a>.
     Código e passo a passo: <a href="https://github.com/m-gnum/analise-virada-lula-flavio-1o-2o-turno-eleicoes-2026" target="_blank" rel="noopener">https://github.com/m-gnum/analise-virada-lula-flavio-1o-2o-turno-eleicoes-2026</a>.
   </p>
+  <div class="comoler"><b>Como ler este painel</b>
+    <ul>
+      <li><b>Variação</b> = votos no 2º turno − votos no 1º turno. <b>p.p.</b> = pontos percentuais dos eleitores aptos do recorte que você filtrou.</li>
+      <li>O painel mostra <b>onde</b> cada candidato cresceu, quem liderava em cada turno e que tipo de área é essa. Ele <b>não mostra de quem vieram os votos de cada eleitor</b> nem explica o porquê.</li>
+      <li>Todos os números e textos se recalculam com os filtros. Use <b>Copiar link desta visão</b> para compartilhar um recorte, e leia os avisos ao final antes de tirar conclusões.</li>
+    </ul>
+  </div>
 </header>
 <main>
   <section class="card filtros">
@@ -174,6 +187,7 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
     <label class="chk"><input type="checkbox" id="fFlavio" checked><span class="dot" style="background:var(--flavio)"></span>Flávio</label>
     <button id="bReset">Limpar filtros</button>
     <button id="bCsv">Baixar CSV (locais filtrados)</button>
+    <button id="bLink">Copiar link desta visão</button>
   </section>
 
   <section class="topo">
@@ -205,6 +219,21 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
   <section class="card">
     <h2 id="tComp">Variação por unidade</h2>
     <p class="sub" id="subUnid"></p>
+    <div class="hctl">
+      <label>Ordenar por
+        <select id="fOrd">
+          <option value="auto">Maior movimento (Lula + Flávio, em votos)</option>
+          <option value="dl">Variação de Lula (votos)</option>
+          <option value="df">Variação de Flávio (votos)</option>
+          <option value="ppl">Variação de Lula (p.p. dos aptos)</option>
+          <option value="ppf">Variação de Flávio (p.p. dos aptos)</option>
+          <option value="ap">Número de eleitores aptos</option>
+        </select>
+      </label>
+      <label>Mostrar
+        <select id="fQtd"><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="all">Todas</option></select>
+      </label>
+    </div>
     <div id="tUnid" style="overflow-x:auto"></div>
     <p class="nota" id="notaUnid"></p>
     <div class="ins" id="iUnid"></div>
@@ -266,6 +295,11 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
       <li><b>Brancos, nulos e abstenção</b> entram em todas as contas: eleitores aptos são os mesmos nos dois turnos, então Δ Lula + Δ Flávio = votos dos eliminados − Δ brancos − Δ nulos − Δ abstenção.</li>
       <li><b>Exterior (ZZ) fora do painel:</b> os totais aqui cobrem só o Brasil, sem os votos no exterior, por isso diferem um pouco dos totais nacionais do TSE.</li>
       <li>Locais sem coordenada válida (623) foram posicionados no centro da própria cidade. Quatro ficaram sem posição e só aparecem nos totais.</li>
+      <li><b>Variação não é conversão:</b> Δ Lula e Δ Flávio são saldos por área. O painel não mostra quem trocou de voto, e "De onde vieram os votos" é uma contabilidade por categoria (eliminados, brancos, nulos, abstenção), não um fluxo individual.</li>
+      <li><b>Resultado nos dois turnos:</b> compara só Lula e Flávio, em % dos votos válidos (no 1º turno o total inclui os candidatos eliminados). "Virou" indica que a liderança entre os dois mudou de um turno para o outro naquela unidade.</li>
+      <li><b>Faixas de renda da tabela</b> são por área: a % do eleitorado que vota em locais cuja renda média cai na faixa, não a distribuição de renda dos domicílios. A renda é de 2022 e é convertida com o salário mínimo de 2026 (R$ 1.621), o que faz as áreas parecerem mais pobres do que eram em valores reais.</li>
+      <li><b>CVLI (mortes violentas):</b> é informado pelos estados ao Sinesp com critérios próprios, só existe por município, cobre os 12 últimos meses (não o período da eleição) e oscila muito em cidades pequenas.</li>
+      <li><b>Associações e regras:</b> o painel testa muitas características ao mesmo tempo, então em recortes com poucas unidades podem surgir padrões por acaso. Não há intervalos de confiança ou testes estatísticos; os textos descrevem, não explicam.</li>
     </ul>
   </section>
 </main>
@@ -319,7 +353,8 @@ async function carregar(){
 }
 
 let D, c, N, ufReg, map, camada, canvas, tip;
-const S = {reg:'', uf:-1, mun:-1, bai:-1, nivel:'uf', lula:true, flavio:true, h1:'rd', h2:'mu', met:'l', tam:20};
+const S = {reg:'', uf:-1, mun:-1, bai:-1, nivel:'uf', lula:true, flavio:true, h1:'rd', h2:'mu', met:'l', tam:20, ord:'auto', qtd:'20'};
+const DEF = {h1:'rd', h2:'mu', met:'l', tam:20, ord:'auto', qtd:'20'};
 const CAMPOS = ['sec','ap','ab1','ab2','l1','l2','f1','f2','o1','b1','b2','n1','n2'];
 
 function derivar(g){
@@ -435,16 +470,16 @@ function ajustar(idx){
 }
 
 /* ---------- ranking ---------- */
-function rank(arr){
+function rank(arr, t){
   const bloco = (tit, cor, key) => {
     const ord = [...arr].sort((a,b)=>b[key]-a[key]);
     const ganhos = ord.filter(g=>g[key]>0).slice(0,5);
     const perdas = ord.filter(g=>g[key]<0).reverse().slice(0,5);
-    const linhas = lista => lista.length ? lista.map(g=>`<tr class="cl" data-k="${g.k}"><td>${esc(g.nome)}</td><td class="n">${sgn(g[key])} <span style="color:#6b7280">· ${pct(g[key], g.ap)}</span></td></tr>`).join('') : '<tr><td colspan="2" style="color:#9aa1ab">nenhum</td></tr>';
-    return `<h3 style="color:${cor}">${tit}: maiores ganhos</h3><table>${linhas(ganhos)}</table>
-            <h3 style="color:${cor}">${tit}: maiores perdas</h3><table>${linhas(perdas)}</table>`;
+    const linhas = (lista, ganho) => lista.length ? lista.map(g=>`<tr class="cl" data-k="${g.k}"><td>${esc(g.nome)}<small class="vol">${fmt(g.ap)} aptos · ${fmtd(g.ap/t.ap*100, g.ap/t.ap<.01?2:1)}% do recorte</small></td><td class="n">${sgn(g[key])} <span style="color:#6b7280">· ${pct(g[key], g.ap)}</span>${ganho && t[key]>0 ? `<small class="vol">${fmtd(g[key]/t[key]*100,1)}% do ganho do recorte</small>` : ''}</td></tr>`).join('') : '<tr><td colspan="2" style="color:#9aa1ab">nenhum</td></tr>';
+    return `<h3 style="color:${cor}">${tit}: maiores ganhos</h3><table>${linhas(ganhos,true)}</table>
+            <h3 style="color:${cor}">${tit}: maiores perdas</h3><table>${linhas(perdas,false)}</table>`;
   };
-  $('rank').innerHTML = `<h2>Maiores variações</h2><p class="sub">No nível do mapa, em votos e em p.p. dos aptos da unidade. Clique numa linha para filtrar.</p>` + bloco('Lula',COR.lula,'dl') + bloco('Flávio',COR.flavio,'df');
+  $('rank').innerHTML = `<h2>Maiores variações</h2><p class="sub">No nível do mapa, em votos e em p.p. dos aptos da unidade, com o tamanho da unidade (aptos e % do recorte) e, nos ganhos, a parcela do ganho do recorte. Clique numa linha para filtrar.</p>` + bloco('Lula',COR.lula,'dl') + bloco('Flávio',COR.flavio,'df');
   $('rank').querySelectorAll('tr.cl').forEach(tr => tr.onclick = () => {
     const k = S.nivel==='reg' ? tr.dataset.k : Number(tr.dataset.k);
     const g = arr.find(x=>x.k===k); if(g) drill(g, S.nivel);
@@ -551,12 +586,18 @@ function gUnid(idx){
   let arr = agrupar(idx, nivel);
   indGrupos(idx, nivel, arr);
   const ref = refInd(idx, nivel);
-  let tit;
+  const T = somar(idx), minApT = T.ap*0.005;
+  const ordF = {auto:(a,b)=>(Math.abs(b.dl)+Math.abs(b.df))-(Math.abs(a.dl)+Math.abs(a.df)), dl:(a,b)=>b.dl-a.dl, df:(a,b)=>b.df-a.df, ppl:(a,b)=>b.dl/b.ap-a.dl/a.ap, ppf:(a,b)=>b.df/b.ap-a.df/a.ap, ap:(a,b)=>b.ap-a.ap};
+  const ordRot = {auto:'maior movimento', dl:'variação de Lula (votos)', df:'variação de Flávio (votos)', ppl:'variação de Lula (p.p. dos aptos)', ppf:'variação de Flávio (p.p. dos aptos)', ap:'número de eleitores aptos'};
+  const ord = nivel==='uf' && S.ord==='auto' ? 'dl' : S.ord;
   const todas = arr;
-  if(nivel==='uf'){ arr.sort((a,b)=>b.dl-a.dl); tit = 'Variação por estado'; }
-  else { arr.sort((a,b)=>(Math.abs(b.dl)+Math.abs(b.df))-(Math.abs(a.dl)+Math.abs(a.df))); arr = arr.slice(0,20); tit = nivel==='mun' ? 'Variação nas 20 cidades com maior movimento' : nivel==='bai' ? 'Variação nos 20 bairros com maior movimento' : 'Variação nos 20 locais com maior movimento'; }
+  const qtd = nivel==='uf' || S.qtd==='all' ? Infinity : Number(S.qtd);
+  arr = (ord==='ppl'||ord==='ppf' ? todas.filter(g=>g.ap>=minApT) : [...todas]).sort(ordF[ord]).slice(0, qtd);
+  $('fQtd').disabled = nivel==='uf'; $('fOrd').value = S.ord; $('fQtd').value = S.qtd;
+  const art = nivel==='mun' ? 'nas' : 'nos', todosTxt = nivel==='mun' ? 'todas as' : 'todos os';
+  const tit = nivel==='uf' ? 'Variação por estado' : qtd===Infinity ? `Variação em ${todosTxt} ${un[nivel]}, em ordem de ${ordRot[ord]}` : S.ord==='auto' ? `Variação ${art} ${arr.length} ${un[nivel]} com maior movimento` : `Variação ${art} ${arr.length} ${un[nivel]}, em ordem de ${ordRot[ord]}`;
   $('tComp').textContent = tit;
-  $('subUnid').textContent = 'Cada linha mostra a renda das áreas, a taxa de mortes violentas (CVLI) e a variação de votos; as barras trazem a variação em votos de Lula e Flávio e, ao lado, de onde vieram os votos (os mesmos dados do gráfico "De onde vieram os votos": eleitores dos candidatos eliminados no 1º turno e queda de brancos, nulos e abstenção; valor negativo = a categoria cresceu), com o rótulo em p.p. dos eleitores aptos da própria unidade. A taxa de CVLI só existe até o nível de cidade: nos bairros e locais, o valor da cidade se repete.';
+  $('subUnid').textContent = 'Cada linha mostra o tamanho da unidade (eleitores aptos e % do recorte), o resultado nos dois turnos, a renda das áreas, a taxa de mortes violentas (CVLI) e a variação de votos; as barras trazem a variação em votos de Lula e Flávio e, ao lado, de onde vieram os votos (os mesmos dados do gráfico "De onde vieram os votos": eleitores dos candidatos eliminados no 1º turno e queda de brancos, nulos e abstenção; valor negativo = a categoria cresceu), com o rótulo em p.p. dos eleitores aptos da própria unidade. A taxa de CVLI só existe até o nível de cidade: nos bairros e locais, o valor da cidade se repete.';
   // escala das barras (folga nas pontas para os rótulos); cada coluna de barras tem a sua escala
   const escala = vals => { const vmax = Math.max(0,...vals), vmin = Math.min(0,...vals), span = (vmax-vmin)||1, lo = vmin<0 ? vmin-span*.7 : 0, hi = vmax+span*.7; return {xp: v=>(v-lo)/(hi-lo)*100, z0: (0-lo)/(hi-lo)*100}; };
   const barra = (E, v, cor, g, nm) => {
@@ -568,6 +609,15 @@ function gUnid(idx){
   // de onde vieram os votos (mesmos dados do gráfico "De onde vieram os votos"): eliminados no 1º turno e queda de brancos, nulos e abstenção
   const FONTES = [['Eliminados no 1º turno', g=>g.o1, '#374151'], ['Queda de brancos', g=>-g.db, '#7c5cbf'], ['Queda de nulos', g=>-g.dn, '#b39ddb'], ['Queda de abstenção', g=>-g.da, COR.ambar]];
   const EF = escala(arr.flatMap(g=>FONTES.map(f=>f[1](g))));
+  const tam = g => { const f = g.ap/T.ap; return `<b>${fmt(g.ap)}</b><small>${fmtd(f*100, f<.01?2:1)}% do recorte</small>` + [S.lula&&T.dl>0?`<small>Lula: ${fmtd(g.dl/T.dl*100,1)}% do ganho</small>`:'', S.flavio&&T.df>0?`<small>Flávio: ${fmtd(g.df/T.df*100,1)}% do ganho</small>`:''].join(''); };
+  const lider = (l, f) => l>f ? 'Lula' : f>l ? 'Flávio' : '';
+  const res = g => {
+    const v1 = g.l1+g.f1+g.o1, v2 = g.l2+g.f2; if(!v1 || !v2) return '–';
+    const a = lider(g.l1,g.f1), b = lider(g.l2,g.f2), m1 = (g.l1-g.f1)/v1*100, m2 = (g.l2-g.f2)/v2*100;
+    const tip = `Margem de Lula sobre Flávio: ${sgnd(m1,1)} p.p. no 1º turno e ${sgnd(m2,1)} p.p. no 2º (% dos votos válidos)`;
+    const ln = (nm, cor, x1, x2) => `<span style="color:${cor}">${nm} ${fmtd(x1/v1*100,1)}% → <b>${fmtd(x2/v2*100,1)}%</b></span>`;
+    return `<span title="${esc(tip)}">${ln('Lula',COR.lula,g.l1,g.l2)}<br>${ln('Flávio',COR.flavio,g.f1,g.f2)}</span>` + (a && b && a!==b ? `<small class="vira">↻ Virou: ${a} → ${b}</small>` : `<small>${b||a||'Empate'} liderou nos dois</small>`);
+  };
   const ci = (v, r) => isFinite(v) ? `<b>${fmtd(v,1)}%</b><small>${sgnd(v-r,1)} p.p.</small>` : '–';
   const cs = g => {
     const t = g.sg.taxa; if(!isFinite(t)) return '–';
@@ -576,19 +626,20 @@ function gUnid(idx){
     return `<b>${fmtd(t,1)}</b><small${baixa}>${fmt(g.sg.v)} vítimas${g.sg.v<10?' (base pequena)':''}</small>` + (isFinite(r) ? `<small class="${r>=1.15?'up':r<.87?'dn':''}">${sgnd(d,0)}% · ${rotSeg(r)}</small>` : '');
   };
   let h = `<table class="tu"><tr><th>${{uf:'Estado',mun:'Cidade',bai:'Bairro',loc:'Local de votação'}[nivel]}</th>`
+    + `<th>Tamanho<small>eleitores aptos</small></th><th>Resultado nos dois turnos<small>% dos votos válidos, 1º → 2º turno</small></th>`
     + (nivel==='loc' ? `<th colspan="4">Renda média do responsável (raio de 1 km)</th>` : INDS.filter(d=>d.rot).map(d=>`<th>Renda média: ${d.rot[0].toLowerCase()+d.rot.slice(1)}<small>% do eleitorado</small></th>`).join(''))
     + `<th>CVLI por 100 mil hab.<small>12 meses, só até a cidade</small></th>`
     + `<th class="bc">Variação de votos<small><span class="lg" style="background:${COR.lula}"></span>Lula<span class="lg" style="background:${COR.flavio}"></span>Flávio</small></th>`
     + `<th class="bc">De onde vieram os votos<small>${FONTES.map(f=>`<span class="lg" style="background:${f[2]}"></span>${f[0]}`).join(' ')}</small></th></tr>`;
   for(const g of arr){
-    h += `<tr><td>${esc(g.nome)}</td>`
+    h += `<tr><td>${esc(g.nome)}</td><td>${tam(g)}</td><td>${res(g)}</td>`
       + (nivel==='loc' ? `<td colspan="4" style="text-align:center">${isFinite(g.rdv) ? `<b>${rendaTxt(g.rdv)}</b>` : '–'}</td>` : INDS.filter(d=>d.rot).map(d=>`<td>${ci(g[d.k],ref[d.k])}</td>`).join(''))
       + `<td class="sg">${cs(g)}</td>`
       + `<td class="bc"><div class="bars"><div class="zero" style="left:${EV.z0}%"></div>${S.lula?barra(EV,g.dl,COR.lula,g,'Lula'):''}${S.flavio?barra(EV,g.df,COR.flavio,g,'Flávio'):''}</div></td>`
       + `<td class="bc"><div class="bars"><div class="zero" style="left:${EF.z0}%"></div>${FONTES.map(f=>barra(EF,f[1](g),f[2],g,f[0])).join('')}</div></td></tr>`;
   }
   $('tUnid').innerHTML = h + '</table>';
-  $('notaUnid').innerHTML = `As colunas de renda mostram a parte dos eleitores aptos que votam em locais cuja renda média do responsável pelo domicílio (raio de 1 km, Censo 2022, SM = R$ ${fmt(SM)}) fica em cada faixa (menos que 1 SM, entre 1 SM e 3 SM, entre 3 SM e 5 SM e acima de 5 SM; as quatro somam 100%), e, embaixo de cada valor, a diferença em p.p. para a média ${ref.nomeInd}. Não é a % de domicílios nem de pessoas. `
+  $('notaUnid').innerHTML = `"Resultado nos dois turnos" compara só Lula e Flávio, em % dos votos válidos (no 1º turno o total inclui os candidatos eliminados); "Virou" indica que a liderança entre os dois mudou. A ordenação por p.p. ignora unidades com menos de 0,5% dos aptos do recorte. As colunas de renda mostram a parte dos eleitores aptos que votam em locais cuja renda média do responsável pelo domicílio (raio de 1 km, Censo 2022, SM = R$ ${fmt(SM)}) fica em cada faixa (menos que 1 SM, entre 1 SM e 3 SM, entre 3 SM e 5 SM e acima de 5 SM; as quatro somam 100%), e, embaixo de cada valor, a diferença em p.p. para a média ${ref.nomeInd}. Não é a % de domicílios nem de pessoas. `
     + `CVLI = homicídio doloso, feminicídio, latrocínio e lesão corporal seguida de morte (vítimas, out/2025 a set/2026, Sinesp-VDE) por 100 mil habitantes (Censo 2022), com a diferença % para a média ${ref.nomeSg} embaixo; é um dado do município inteiro, que só existe até o nível de cidade${nivel==='bai'||nivel==='loc' ? ': aqui ele se repete em todos os bairros e locais, e a comparação é da cidade com a média do estado' : ' (abaixo da cidade, o valor se repete)'}. Em cidades pequenas a taxa oscila muito com poucos casos.`;
   // insights
   const pos=[], neg=[], minAp = todas.reduce((s,g)=>s+g.ap,0)*0.005, un_ = un[nivel];
@@ -607,11 +658,22 @@ function gUnid(idx){
     if(rel.length>1 && r0[k]<0) neg.push(`${cl(cor,nm)}: pior variação proporcional: ${esc(r0.nome)} (${pct(r0[k],r0.ap)}, ${kk(r0[k])} votos).`);
     const relBot = rel.slice(-3).reverse();
     if(relBot.length>=2 && rel.length>=6){ const t = com(relBot); if(t) neg.push(`${cl(cor,nm)}: em proporção aos aptos, o menor crescimento está em ${relBot.map(g=>`${esc(g.nome)} (${pct(g[k],g.ap)})`).join(', ')}${t}.`); }
+    if(T[k]>0){ const conc = [...todas].sort((a,b)=>b[k]-a[k]).slice(0,3).filter(g=>g[k]>0); if(conc.length>=2 && todas.length>=6) pos.push(`${cl(cor,nm)}: as ${conc.length} ${un_} que mais ganharam em votos respondem por ${fmtd(conc.reduce((t,g)=>t+g[k],0)/T[k]*100,0)}% do ganho do recorte: ${conc.map(g=>`${esc(g.nome)} (${fmtd(g[k]/T[k]*100,0)}%)`).join(', ')}.`); }
     const q = todas.filter(g=>g[k]<0).length;
     if(!fim.length) neg.push(`${cl(cor,nm)}: não perdeu votos em nenhuma das ${todas.length} unidades.`);
     else neg.push(`${cl(cor,nm)} perdeu votos em ${q} de ${todas.length} unidades (${fmtd(q/todas.length*100,0)}%).`);
   }
   const info = [];
+  { // viradas de liderança entre os dois turnos
+    const vira = todas.filter(g=>{ const a = Math.sign(g.l1-g.f1), b = Math.sign(g.l2-g.f2); return a!==0 && b!==0 && a!==b; });
+    if(todas.length>1){
+      if(!vira.length) info.push(`Nenhuma das ${fmt(todas.length)} ${un_} trocou de líder entre Lula e Flávio de um turno para o outro.`);
+      else {
+        const pL = vira.filter(g=>g.l2>g.f2), pF = vira.filter(g=>g.f2>g.l2), maiores = [...vira].sort((a,b)=>b.ap-a.ap).slice(0,3);
+        info.push(`Viradas de liderança: ${fmt(vira.length)} de ${fmt(todas.length)} ${un_} (${fmtd(vira.length/todas.length*100,0)}%) trocaram de líder entre Lula e Flávio, ${fmt(pL.length)} para ${cl(COR.lula,'Lula')} e ${fmt(pF.length)} para ${cl(COR.flavio,'Flávio')}. Maiores: ${maiores.map(g=>`${esc(g.nome)} (${fmt(g.ap)} aptos, para ${g.l2>g.f2?'Lula':'Flávio'})`).join(', ')}.`);
+      }
+    }
+  }
   { // origem do ganho conjunto nas unidades listadas na tabela
     const G = arr.reduce((t,g)=>t+g.dl+g.df,0);
     if(G>0 && arr.length>1){
@@ -1253,8 +1315,9 @@ function atualizar(refit){
   desenhar(arr);
   if(refit) ajustar(idx);
   FK = ativas(idx); optsH();
-  rank(arr); insMapa(arr); gBalanco(t); gUnid(idx); heat(idx); perfilAreas(idx); resumoExecutivo(idx);
+  rank(arr, t); insMapa(arr); gBalanco(t); gUnid(idx); heat(idx); perfilAreas(idx); resumoExecutivo(idx);
   S.idx = idx;
+  hashSalvar();
 }
 
 function csv(){
@@ -1275,6 +1338,41 @@ function optsH(){
   for(const k of ['h1','h2']) if(!FK.includes(S[k])) S[k] = FK.find(x=>x!==S[k==='h1'?'h2':'h1']) || S[k];
   for(const [id,k] of [['fH1','h1'],['fH2','h2']]) $(id).innerHTML = FK.map(v=>`<option value="${v}"${v===S[k]?' selected':''}${v===S[k==='h1'?'h2':'h1']?' disabled':''}>${esc(PERFIL[v].rot)}</option>`).join('');
 }
+function hashParams(){
+  const p = new URLSearchParams();
+  const natural = S.bai>=0 ? 'loc' : S.mun>=0 ? 'bai' : (S.uf>=0 || S.reg) ? 'mun' : 'uf';
+  if(S.reg) p.set('reg', S.reg);
+  if(S.uf>=0) p.set('uf', D.ufs[S.uf]);
+  if(S.mun>=0) p.set('mun', D.muns[S.mun][0]);
+  if(S.bai>=0) p.set('bai', D.bairros[S.bai] || '');
+  if(S.nivel!==natural) p.set('nivel', S.nivel);
+  if(!S.lula) p.set('lula','0');
+  if(!S.flavio) p.set('flavio','0');
+  for(const k of Object.keys(DEF)) if(S[k]!==DEF[k]) p.set(k, S[k]);
+  return p.toString();
+}
+function hashSalvar(){ try{ history.replaceState(null, '', '#'+hashParams()); }catch(e){} }
+const linkAtual = () => location.href.split('#')[0] + '#' + hashParams();
+function hashLer(){
+  const p = new URLSearchParams(location.hash.slice(1)); if(![...p.keys()].length) return;
+  if(REGS.includes(p.get('reg'))) S.reg = p.get('reg');
+  const u = p.get('uf'); if(u && D.ufs.includes(u)){ S.uf = D.ufs.indexOf(u); S.reg = ''; }
+  const mn = p.get('mun'); if(mn && S.uf>=0){ const j = D.muns.findIndex(m=>m[1]===S.uf && m[0]===mn); if(j>=0) S.mun = j; }
+  const bn = p.get('bai'); if(bn!==null && S.mun>=0){ const j = D.bairros.indexOf(bn); if(j>=0) S.bai = j; }
+  S.nivel = S.bai>=0 ? 'loc' : S.mun>=0 ? 'bai' : (S.uf>=0 || S.reg) ? 'mun' : 'uf';
+  const nv = p.get('nivel'); if(['reg','uf','mun','bai','loc'].includes(nv)) S.nivel = nv;
+  if(p.get('lula')==='0') S.lula = false;
+  if(p.get('flavio')==='0') S.flavio = false;
+  for(const k of ['h1','h2']) if(PERFIL[p.get(k)]) S[k] = p.get(k);
+  if(METS[p.get('met')]) S.met = p.get('met');
+  if(['10','20','25'].includes(p.get('tam'))) S.tam = Number(p.get('tam'));
+  if(['auto','dl','df','ppl','ppf','ap'].includes(p.get('ord'))) S.ord = p.get('ord');
+  if(['20','50','100','all'].includes(p.get('qtd'))) S.qtd = p.get('qtd');
+}
+function marcarBotoes(){
+  document.querySelectorAll('#fTam button').forEach(b=>b.classList.toggle('on', Number(b.dataset.t)===S.tam));
+  document.querySelectorAll('#fMetrica button').forEach(b=>b.classList.toggle('on', b.dataset.m===S.met));
+}
 function ligar(){
   $('fReg').onchange = e => { S.reg = e.target.value; S.uf=-1; S.mun=-1; S.bai=-1; S.nivel = 'uf'; sincronizar(); atualizar(true); };
   $('fUf').onchange = e => { S.uf = Number(e.target.value); S.mun=-1; S.bai=-1; S.nivel = S.uf>=0 ? 'mun' : 'uf'; sincronizar(); atualizar(true); };
@@ -1285,14 +1383,20 @@ function ligar(){
   $('fFlavio').onchange = e => { S.flavio = e.target.checked; atualizar(false); };
   $('bReset').onclick = () => { Object.assign(S,{reg:'',uf:-1,mun:-1,bai:-1,nivel:'uf',lula:true,flavio:true}); sincronizar(); atualizar(true); };
   $('bCsv').onclick = csv;
+  $('bLink').onclick = () => {
+    const u = linkAtual(), b = $('bLink'), t0 = b.textContent;
+    (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(() => { b.textContent = 'Link copiado!'; setTimeout(()=>{ b.textContent = t0; }, 1800); }).catch(() => window.prompt('Copie o link desta visão:', u));
+  };
+  $('fOrd').onchange = e => { S.ord = e.target.value; gUnid(S.idx || filtrar()); hashSalvar(); };
+  $('fQtd').onchange = e => { S.qtd = e.target.value; gUnid(S.idx || filtrar()); hashSalvar(); };
   optsH();
-  $('fH1').onchange = e => { S.h1 = e.target.value; optsH(); heat(S.idx || filtrar()); };
-  $('fH2').onchange = e => { S.h2 = e.target.value; optsH(); heat(S.idx || filtrar()); };
+  $('fH1').onchange = e => { S.h1 = e.target.value; optsH(); heat(S.idx || filtrar()); hashSalvar(); };
+  $('fH2').onchange = e => { S.h2 = e.target.value; optsH(); heat(S.idx || filtrar()); hashSalvar(); };
   document.querySelectorAll('#fTam button').forEach(b => b.onclick = () => {
-    S.tam = Number(b.dataset.t); document.querySelectorAll('#fTam button').forEach(x=>x.classList.toggle('on', x===b)); perfilAreas(S.idx || filtrar());
+    S.tam = Number(b.dataset.t); document.querySelectorAll('#fTam button').forEach(x=>x.classList.toggle('on', x===b)); perfilAreas(S.idx || filtrar()); hashSalvar();
   });
   document.querySelectorAll('#fMetrica button').forEach(b => b.onclick = () => {
-    S.met = b.dataset.m; document.querySelectorAll('#fMetrica button').forEach(x=>x.classList.toggle('on', x===b)); heat(S.idx || filtrar());
+    S.met = b.dataset.m; document.querySelectorAll('#fMetrica button').forEach(x=>x.classList.toggle('on', x===b)); heat(S.idx || filtrar()); hashSalvar();
   });
 }
 
@@ -1305,7 +1409,7 @@ function ligar(){
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {maxZoom:16, attribution:'Mapa base © Esri, HERE, Garmin, OpenStreetMap contributors'}).addTo(map);
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {maxZoom:16, opacity:.8}).addTo(map);
   canvas = L.canvas({padding:.3}); camada = L.layerGroup().addTo(map); tip = L.tooltip({sticky:false, direction:'top', opacity:.97});
-  ligar(); sincronizar(); atualizar(true);
+  hashLer(); ligar(); sincronizar(); marcarBotoes(); atualizar(true);
   map.on('zoomend', () => { if(S.arr) desenhar(S.arr); });
   $('carregando').remove();
   setTimeout(() => { map.invalidateSize(); ajustar(S.idx); }, 50);
