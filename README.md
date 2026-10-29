@@ -2,7 +2,7 @@
 
 Painel interativo (um único arquivo HTML) que mostra quanto Lula e Flávio ganharam ou perderam de votos entre o 1º turno (04/10/2026) e o 2º turno (25/10/2026), por **região, estado, cidade, bairro e local de votação**, e que cruza essa variação com o **perfil do eleitorado** (TSE) e a **renda** (Censo 2022, IBGE).
 
-**Abrir o painel:** https://m-gnum.github.io/eleicoes-2026-lula-flavio/ (ou baixe `index.html` e abra no navegador; precisa de internet para o mapa e as bibliotecas).
+**Abrir o painel:** https://m-gnum.github.io/analise-virada-lula-flavio-1o-2o-turno-eleicoes-2026/ (ou baixe `index.html` e abra no navegador; precisa de internet para o mapa e as bibliotecas).
 
 ## O que o painel responde
 
