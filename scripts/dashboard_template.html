@@ -1,0 +1,1140 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Lula x Flávio: variação de votos entre os turnos (2026)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#fff; --ink:#1b1f24; --mut:#5d6672; --line:#e3e6ea;
+  --lula:#D7263D; --flavio:#1F5AA6; --cinza:#6b7280; --ambar:#c27a00; --verde:#2f855a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{padding:18px 16px 6px;max-width:1400px;margin:0 auto}
+h1{margin:0;font-size:22px;letter-spacing:-.2px}
+h2{margin:0 0 4px;font-size:16px}
+.sub{color:var(--mut);margin:4px 0 0}
+main{max-width:1400px;margin:0 auto;padding:8px 16px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:14px}
+.filtros{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
+.filtros label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px}
+select,button{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);min-width:130px;max-width:220px}
+select:disabled{background:#f0f1f3;color:#9aa1ab}
+button{cursor:pointer;min-width:0}
+button:hover{background:#f0f2f5}
+.seg{display:flex}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:6px 0 0 6px;margin-left:0}
+.seg button:last-child{border-radius:0 6px 6px 0}
+.seg button.on{background:#1b1f24;color:#fff;border-color:#1b1f24}
+.chk{flex-direction:row!important;align-items:center;gap:6px!important;color:var(--ink)!important;font-size:13px!important}
+.chk input{margin:0}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;border-top:4px solid var(--cinza)}
+.kpi.l{border-top-color:var(--lula)} .kpi.f{border-top-color:var(--flavio)}
+.kpi .t{font-size:12px;color:var(--mut)}
+.kpi .v{font-size:26px;font-weight:650;letter-spacing:-.5px;margin:2px 0}
+.kpi .s{font-size:12px;color:var(--mut)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:14px;margin-top:14px}
+.grid2 .card{margin-top:0}
+.grid-eq{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:14px;margin-top:14px;align-items:start}
+.grid-eq .card{margin-top:0}
+#mapa{height:600px;border-radius:8px;border:1px solid var(--line)}
+.legenda{font-size:12px;color:var(--mut);margin:8px 2px 0;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center}
+.bolha{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-1px;margin-right:4px;border:2px solid var(--cinza)}
+.bolha.cheia{background:var(--cinza);opacity:.55}
+.rank h3{font-size:13px;margin:10px 0 4px}
+.rank table{width:100%;border-collapse:collapse;font-size:12.5px}
+.rank td{padding:3px 4px;border-bottom:1px solid var(--line)}
+.rank td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rank tr.cl{cursor:pointer}
+.rank tr.cl:hover{background:#f3f5f8}
+table.comp{width:100%;border-collapse:collapse;font-size:12.5px}
+table.comp th,table.comp td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+table.comp th:first-child,table.comp td:first-child{text-align:left}
+table.comp td:nth-child(2){white-space:nowrap}
+table.comp th{font-weight:600;color:var(--mut);font-size:11.5px}
+table.comp tr.cab td{background:#f3f5f8;font-weight:600}
+.aviso{font-size:12.5px;color:var(--mut);background:#fff8e6;border:1px solid #f0dfae;border-radius:8px;padding:10px 12px}
+.aviso ul{margin:6px 0 0 18px;padding:0}
+.nota{font-size:12px;color:var(--mut);margin:6px 0 0}
+#carregando{position:fixed;inset:0;background:rgba(246,247,249,.92);display:flex;align-items:center;justify-content:center;font-size:16px;z-index:9999}
+.leaflet-tooltip{font-size:12px;line-height:1.35}
+.h3{font-size:14px;margin:14px 0 4px}
+.regras{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}
+.regras h3{font-size:13px;margin:8px 0 6px}
+.rc{border:1px solid var(--line);border-left:4px solid var(--cinza);border-radius:8px;padding:8px 10px;margin-bottom:8px;background:#fff}
+.rc .rt{font-size:13px}
+.rc .rm,.rm{color:var(--mut);font-size:12px}
+.rc .rr{margin:5px 0}
+.chip{display:inline-block;background:#eef1f5;border-radius:12px;padding:2px 9px;margin:2px 4px 2px 0;font-size:12px}
+.sp{color:var(--verde)}.sn{color:#c05621}
+table.perfil td small{color:inherit;opacity:.8}
+table.perfil tr.todos td{background:#f7f8fa;color:var(--mut)}
+table.perfil td,table.perfil th{font-size:12px;padding:5px 5px}
+.det{margin-top:12px}
+.det summary{cursor:pointer;font-weight:600}
+.qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.qp .qt{font-size:11.5px;font-weight:600;margin-bottom:3px}
+.qb{position:relative;height:62px;display:flex;align-items:flex-end;gap:8px;border-bottom:1px solid var(--line)}
+.qg{display:flex;align-items:flex-end;gap:1px}
+.qg i{display:block;width:9px}
+.qb .base{position:absolute;left:0;right:0;bottom:24px;border-top:1px dashed #9aa1ab}
+.rs{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-top:12px;background:#fbfcfd}
+.rs h3,.rs summary{font-size:15px;font-weight:650;margin:0 0 4px;cursor:default}
+.rs summary{cursor:pointer}
+.pares{margin-top:8px}
+.pares>summary,.par>summary{cursor:pointer;font-weight:600;font-size:13px}
+.par{margin:4px 0 4px 10px;padding-left:8px;border-left:2px solid var(--line)}
+.par>summary{font-weight:500}
+.par ul{margin:4px 0}
+.rs h4{font-size:12.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.3px;margin:12px 0 4px}
+.rs ul{margin:0;padding-left:18px}
+.rs li{margin:4px 0;line-height:1.5}
+.ins{margin-top:10px;background:#f7f9fb;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:12.5px;line-height:1.5}
+.ins b.t{display:block;margin-bottom:2px}
+.ins ul{margin:2px 0 4px;padding:0;list-style:none}
+.ins li{padding-left:18px;position:relative;margin:2px 0}
+.ins li::before{position:absolute;left:2px;font-size:10px;top:2px}
+.ins li.p::before{content:"▲";color:var(--verde)}
+.ins li.n::before{content:"▼";color:#c05621}
+.ins li.i::before{content:"●";color:var(--mut)}
+table.heat{border-collapse:separate;border-spacing:2px;font-size:12px;width:100%;table-layout:fixed}
+table.heat th{font-weight:600;color:var(--ink);background:#f3f5f8;padding:5px 4px;text-align:center;border-radius:4px;font-size:11.5px;line-height:1.3}
+table.heat th small{display:block;font-weight:400;color:var(--mut)}
+table.heat th.corner{background:none;text-align:left;font-weight:400;color:var(--mut)}
+table.heat td{text-align:center;padding:6px 3px;border-radius:4px;font-variant-numeric:tabular-nums;line-height:1.25;height:54px}
+table.heat td b{display:block;font-size:13.5px}
+table.heat td small{display:block;font-size:10.5px;opacity:.85}
+table.heat td.vazio{background:#f3f5f8;color:#9aa1ab}
+table.heat td.tot,table.heat th.tot{outline:1px solid var(--line)}
+.escala{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--mut);margin:8px 2px 0}
+.escala i{display:block;height:10px;width:220px;border-radius:5px}
+.hctl{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end;margin:8px 0}
+.hctl label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}.grid-eq{grid-template-columns:1fr}#mapa{height:460px}}
+</style>
+</head>
+<body>
+<div id="carregando">Carregando dados…</div>
+<header>
+  <h1>Lula x Flávio: quanto cada um ganhou ou perdeu entre o 1º e o 2º turno</h1>
+  <p class="sub">Presidente da República, 2026. Variação = votos no 2º turno − votos no 1º turno, por local de votação, cidade, estado e região. Dados do TSE e do Censo 2022 (IBGE).</p>
+</header>
+<main>
+  <section class="card filtros">
+    <label>Região <select id="fReg"></select></label>
+    <label>Estado <select id="fUf"></select></label>
+    <label>Cidade <select id="fMun"></select></label>
+    <label>Bairro (endereço do local de votação) <select id="fBai"></select></label>
+    <label>Nível do mapa
+      <span class="seg" id="fNivel">
+        <button data-n="reg">Região</button><button data-n="uf" class="on">Estado</button><button data-n="mun">Cidade</button><button data-n="bai">Bairro</button><button data-n="loc">Local</button>
+      </span>
+    </label>
+    <label class="chk"><input type="checkbox" id="fLula" checked><span class="dot" style="background:var(--lula)"></span>Lula</label>
+    <label class="chk"><input type="checkbox" id="fFlavio" checked><span class="dot" style="background:var(--flavio)"></span>Flávio</label>
+    <button id="bReset">Limpar filtros</button>
+    <button id="bCsv">Baixar CSV (locais filtrados)</button>
+  </section>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="grid2">
+    <div class="card">
+      <h2>Mapa da variação de votos</h2>
+      <p class="sub" id="mapaSub"></p>
+      <div id="mapa"></div>
+      <div class="legenda">
+        <span><span class="bolha cheia"></span>Bolha cheia: ganhou votos</span>
+        <span><span class="bolha"></span>Bolha vazia: perdeu votos</span>
+        <span><span class="dot" style="background:var(--lula)"></span> Lula &nbsp; <span class="dot" style="background:var(--flavio)"></span> Flávio</span>
+        <span>Área proporcional ao tamanho da variação. Clique numa bolha para filtrar.</span>
+      </div>
+      <div class="ins" id="iMapa"></div>
+    </div>
+    <div class="card rank" id="rank"></div>
+  </section>
+
+  <section class="grid-eq">
+    <div class="card">
+      <h2>De onde vieram os votos que Lula e Flávio ganharam</h2>
+      <p class="sub">Cada voto novo veio de eleitor que votou em outro candidato, em branco, nulo ou não compareceu no 1º turno.</p>
+      <div id="gBalanco" style="height:360px"></div>
+      <p class="nota" id="notaBalanco"></p>
+      <div class="ins" id="iBalanco"></div>
+    </div>
+    <div class="card">
+      <h2 id="tComp">Variação por unidade</h2>
+      <p class="sub">Barras em votos; o rótulo traz também a variação em p.p. dos eleitores aptos da própria unidade.</p>
+      <div id="gUnid" style="height:420px"></div>
+      <div class="ins" id="iUnid"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Onde cada candidato mais ganhou e mais perdeu: perfil das áreas</h2>
+    <p class="sub">Qual o perfil dos locais de votação em que cada candidato mais cresceu entre os dois turnos, e daqueles em que cresceu menos? "Perdeu mais" aqui significa a menor variação em p.p. dos aptos (quase nenhum local perdeu votos em termos absolutos). As regras combinam várias características ao mesmo tempo.</p>
+    <div id="perfilResumo" style="font-size:14px"></div>
+    <h3 class="h3">Regras: combinações de características com maior e menor variação</h3>
+    <p class="nota" style="margin-top:0">Encontradas por uma árvore de regressão (peso = eleitores aptos, até 3 condições por regra, cada regra com pelo menos 2% dos aptos). Cada regra descreve áreas, não pessoas.</p>
+    <div class="regras" id="regras"></div>
+    <h3 class="h3">Perfil médio dos grupos extremos</h3>
+    <div class="hctl">
+      <label>Tamanho dos grupos extremos
+        <span class="seg" id="fTam"><button data-t="10">10%</button><button data-t="20" class="on">20%</button><button data-t="25">25%</button></span>
+      </label>
+    </div>
+    <div id="tabComp" style="overflow-x:auto"></div>
+    <details class="det"><summary>Ver em que faixa de cada característica caem essas áreas (quintis)</summary>
+      <p class="nota">Cada gráfico mostra, para o grupo que mais ganhou (cor do candidato) e para o de menor variação (cinza), que parte dos eleitores do grupo está em cada quintil da característica (Q1 = locais com o menor valor, Q5 = o maior). A linha tracejada marca 20%: se as barras ficam nela, a característica não distingue o grupo.</p>
+      <div id="quintPanels"></div>
+    </details>
+    <div class="ins" id="iComp"></div>
+  </section>
+
+  <section class="card">
+    <h2>Perfil do eleitorado cruzado: característica 1 × característica 2</h2>
+    <p class="sub">Os locais de votação do filtro atual são divididos em 5 grupos (quintis, com o mesmo número de eleitores aptos) por cada característica; o cruzamento forma 25 grupos. Cada célula mostra a variação em p.p. dos eleitores aptos do grupo (cor e número em destaque) e em votos.</p>
+    <div class="hctl">
+      <label>Característica 1 (linhas) <select id="fH1"></select></label>
+      <label>Característica 2 (colunas) <select id="fH2"></select></label>
+      <label>Variável exibida
+        <span class="seg" id="fMetrica">
+          <button data-m="l" class="on">Lula</button><button data-m="f">Flávio</button><button data-m="bn">Brancos + nulos</button><button data-m="ab">Abstenção</button>
+        </span>
+      </label>
+    </div>
+    <div id="heat" style="overflow-x:auto"></div>
+    <div class="escala" id="heatEscala"></div>
+    <p class="nota" id="notaHeat"></p>
+    <div class="ins" id="iHeat"></div>
+  </section>
+
+  <section class="card">
+    <h2>Resumo executivo</h2>
+    <p class="sub" id="resumoSub"></p>
+    <div id="resumo"></div>
+  </section>
+
+  <section class="aviso">
+    <b>Como ler, e o que esses dados não mostram</b>
+    <ul>
+      <li><b>Falácia ecológica:</b> as relações são entre áreas (locais de votação), não entre indivíduos. Um local com mais jovens que ganhou votos não prova que os jovens votaram de determinada forma.</li>
+      <li><b>Local de votação, não seção:</b> o mapa e os gráficos agrupam as seções do mesmo local (499 mil seções em 94 mil locais). O CSV por seção está em <code>saida/secoes_variacao_votos.csv</code>.</li>
+      <li><b>Idade, sexo e escolaridade</b> vêm do perfil do eleitorado por seção do TSE (gerado em julho/2026) e descrevem quem vota no local, com diferença de 1,5% para os aptos do 2º turno. <b>Cor/raça</b> está informada para só 21% dos eleitores e por isso não foi usada.</li>
+      <li><b>Regras de perfil:</b> são descobertas por uma árvore de regressão nos dados do filtro atual, de forma exploratória. Elas descrevem em que tipo de área cada candidato cresceu mais ou menos; não provam causa, e os fatores explicam só parte da variação entre locais.</li>
+      <li><b>Renda:</b> Censo 2022 mede só o rendimento do <b>responsável pelo domicílio</b> (média ponderada num raio de 1 km do local), não a renda familiar.</li>
+      <li><b>Brancos, nulos e abstenção</b> entram em todas as contas: eleitores aptos são os mesmos nos dois turnos, então Δ Lula + Δ Flávio = votos dos eliminados − Δ brancos − Δ nulos − Δ abstenção.</li>
+      <li><b>Exterior (ZZ) fora do painel:</b> os totais aqui cobrem só o Brasil, sem os votos no exterior, por isso diferem um pouco dos totais nacionais do TSE.</li>
+      <li>Locais sem coordenada válida (623) foram posicionados no centro da própria cidade. Quatro ficaram sem posição e só aparecem nos totais.</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+const B64 = "__DADOS_B64__";
+</script>
+<script>
+"use strict";
+const COR = {lula:'#D7263D', flavio:'#1F5AA6', cinza:'#6b7280', ambar:'#c27a00', verde:'#2f855a'};
+const REG = {AC:'Norte',AM:'Norte',AP:'Norte',PA:'Norte',RO:'Norte',RR:'Norte',TO:'Norte',
+  AL:'Nordeste',BA:'Nordeste',CE:'Nordeste',MA:'Nordeste',PB:'Nordeste',PE:'Nordeste',PI:'Nordeste',RN:'Nordeste',SE:'Nordeste',
+  DF:'Centro-Oeste',GO:'Centro-Oeste',MS:'Centro-Oeste',MT:'Centro-Oeste',
+  ES:'Sudeste',MG:'Sudeste',RJ:'Sudeste',SP:'Sudeste',PR:'Sul',RS:'Sul',SC:'Sul'};
+const REGS = ['Norte','Nordeste','Centro-Oeste','Sudeste','Sul'];
+const fmt = n => Math.round(n).toLocaleString('pt-BR');
+const fmtd = (x,d=1) => x.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const sgn = n => (n>0?'+':n<0?'−':'')+fmt(Math.abs(n));
+const sgnd = (x,d=2) => (x>0?'+':x<0?'−':'')+fmtd(Math.abs(x),d);
+const mi = n => Math.abs(n)>=1e6 ? (n>0?'+':n<0?'−':'')+fmtd(Math.abs(n)/1e6,2)+' mi' : sgn(n);
+const miAbs = n => n>=1e6 ? fmtd(n/1e6,2)+' mi' : fmt(n);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $ = id => document.getElementById(id);
+const SM = 1621; // salário mínimo (R$)
+const kk = n => { const a = Math.abs(n), s = n>0?'+':n<0?'−':''; return a>=1e6 ? s+fmtd(a/1e6,2)+' mi' : a>=1e4 ? s+fmtd(a/1e3,0)+' mil' : a>=1e3 ? s+fmtd(a/1e3,1)+' mil' : s+fmt(a); };
+const pct = (v, base) => base ? sgnd(v/base*100, 2)+' p.p.' : '–';
+const rendaTxt = v => 'R$ '+fmt(v)+' ('+fmtd(v/SM,1)+' SM)';
+/* caixa de insights: pos/neg/info são listas de HTML */
+function ins(id, pos, neg, info){
+  const li = (cls, a) => a.map(t=>`<li class="${cls}">${t}</li>`).join('');
+  $(id).innerHTML = `<b class="t">Insights para este filtro</b><ul>${li('p',pos||[])}${li('n',neg||[])}${li('i',info||[])}</ul>`;
+}
+const un = {reg:'regiões',uf:'estados',mun:'cidades',bai:'bairros',loc:'locais de votação'};
+const KB = 200000; // chave de bairro = cidade*KB + bairro (o nome do bairro só é único dentro da cidade)
+const nomeBairro = k => (D.bairros[k%KB] || '(sem bairro)');
+const cl = (cor, t) => `<b style="color:${cor}">${t}</b>`;
+
+async function carregar(){
+  const bin = Uint8Array.from(atob(B64), ch => ch.charCodeAt(0));
+  const ds = new DecompressionStream('gzip');
+  const txt = await new Response(new Blob([bin]).stream().pipeThrough(ds)).text();
+  return JSON.parse(txt);
+}
+
+let D, c, N, ufReg, map, camada, canvas, tip;
+const S = {reg:'', uf:-1, mun:-1, bai:-1, nivel:'uf', lula:true, flavio:true, h1:'mu', h2:'i4', met:'l', tam:20};
+const CAMPOS = ['sec','ap','ab1','ab2','l1','l2','f1','f2','o1','b1','b2','n1','n2'];
+
+function derivar(g){
+  g.dl = g.l2-g.l1; g.df = g.f2-g.f1; g.db = g.b2-g.b1; g.dn = g.n2-g.n1; g.da = g.ab2-g.ab1;
+}
+function nomeLocal(i){ const m = D.muns[c.mun[i]]; return D.nm[i] + ' · ' + m[0] + '/' + D.ufs[m[1]]; }
+function nomeGrupo(nivel, g){
+  if(nivel==='reg') return g.k;
+  if(nivel==='uf') return D.ufs[g.k];
+  if(nivel==='mun'){ const m = D.muns[g.k]; return m[0] + '/' + D.ufs[m[1]]; }
+  if(nivel==='bai'){ const m = D.muns[Math.floor(g.k/KB)]; return nomeBairro(g.k) + ' · ' + m[0] + '/' + D.ufs[m[1]]; }
+  return nomeLocal(g.k);
+}
+
+function filtrar(){
+  const out = [];
+  for(let i=0;i<N;i++){
+    if(S.uf>=0 && c.uf[i]!==S.uf) continue;
+    if(S.reg && ufReg[c.uf[i]]!==S.reg) continue;
+    if(S.mun>=0 && c.mun[i]!==S.mun) continue;
+    if(S.bai>=0 && c.bai[i]!==S.bai) continue;
+    out.push(i);
+  }
+  return out;
+}
+
+function agrupar(idx, nivel){
+  const m = new Map();
+  for(const i of idx){
+    const k = nivel==='reg' ? ufReg[c.uf[i]] : nivel==='uf' ? c.uf[i] : nivel==='mun' ? c.mun[i] : nivel==='bai' ? c.mun[i]*KB + c.bai[i] : i;
+    let g = m.get(k);
+    if(!g){ g = {k, n:0, lat:0, lon:0, w:0}; for(const f of CAMPOS) g[f]=0; m.set(k,g); }
+    for(const f of CAMPOS) g[f] += c[f][i];
+    g.n++;
+    if(c.lat[i]!==0){ const w = c.ap[i]||1; g.lat += c.lat[i]*w; g.lon += c.lon[i]*w; g.w += w; }
+  }
+  const arr = [...m.values()];
+  for(const g of arr){ g.lat = g.w ? g.lat/g.w : 0; g.lon = g.w ? g.lon/g.w : 0; derivar(g); g.nome = nomeGrupo(nivel, g); }
+  return arr;
+}
+
+function somar(idx){
+  const t = {n:idx.length}; for(const f of CAMPOS) t[f]=0;
+  for(const i of idx) for(const f of CAMPOS) t[f] += c[f][i];
+  derivar(t); return t;
+}
+
+/* ---------- KPIs ---------- */
+function kpis(t){
+  const pp = v => t.ap ? sgnd(v/t.ap*100,2)+' p.p. dos aptos' : '';
+  const card = (cls, tit, v, sub) => `<div class="kpi ${cls}"><div class="t">${tit}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`;
+  $('kpis').innerHTML =
+    card('l','Lula: variação de votos', mi(t.dl), `${miAbs(t.l1)} → ${miAbs(t.l2)} · ${pp(t.dl)}`) +
+    card('f','Flávio: variação de votos', mi(t.df), `${miAbs(t.f1)} → ${miAbs(t.f2)} · ${pp(t.df)}`) +
+    card('','Votos dos eliminados no 1º turno', miAbs(t.o1), `${t.ap?fmtd(t.o1/t.ap*100,2):'0'}% dos aptos`) +
+    card('','Brancos e nulos: variação', mi(t.db+t.dn), `brancos ${mi(t.db)} · nulos ${mi(t.dn)}`) +
+    card('','Abstenção: variação', mi(t.da), `${fmtd(t.ab1/Math.max(t.ap,1)*100,1)}% → ${fmtd(t.ab2/Math.max(t.ap,1)*100,1)}% dos aptos`);
+}
+
+/* ---------- mapa ---------- */
+function popup(g, nivel){
+  const lin = (nome, a, b, d, cor) => `<div><span style="color:${cor};font-weight:600">${nome}</span>: ${fmt(a)} → ${fmt(b)} (<b>${sgn(d)}</b>${g.ap?`, ${sgnd(d/g.ap*100,2)} p.p.`:''})</div>`;
+  return `<b>${esc(g.nome)}</b>${nivel!=='loc'?` <span style="color:#6b7280">${fmt(g.n)} locais · ${fmt(g.sec)} seções</span>`:''}`
+    + lin('Lula', g.l1, g.l2, g.dl, COR.lula) + lin('Flávio', g.f1, g.f2, g.df, COR.flavio)
+    + `<div>Brancos ${sgn(g.db)} · Nulos ${sgn(g.dn)} · Abstenção ${sgn(g.da)}</div>`;
+}
+function desenhar(arr){
+  camada.clearLayers();
+  const nivel = S.nivel;
+  const z = map.getZoom();
+  const f = (nivel==='reg' || nivel==='uf') ? Math.min(1.6, Math.max(.8, Math.pow(1.1, z-4))) : Math.min(4, Math.max(.8, Math.pow(1.25, z-4)));
+  const rMax = {reg:46, uf:34, mun:10, bai:14, loc:8}[nivel] * f;
+  let aviso = '';
+  for(const cand of ['lula','flavio']){
+    if(!S[cand]) continue;
+    const key = cand==='lula' ? 'dl' : 'df';
+    let ord = arr.filter(g=>g.lat!==0 && g[key]!==0).sort((a,b)=>Math.abs(b[key])-Math.abs(a[key]));
+    if(ord.length > 12000){ ord = ord.slice(0,12000); aviso = ' Mostrando as 12.000 maiores variações; filtre por estado ou cidade para ver todos os locais.'; }
+    if(!ord.length) continue;
+    const ref = Math.abs(ord[Math.min(ord.length-1, Math.floor(ord.length*0.02))][key]) || 1;
+    for(const g of ord){
+      const v = g[key], sobe = v>0;
+      const r = Math.min(rMax*1.15, Math.max(2, rMax*Math.sqrt(Math.abs(v)/ref)));
+      const m = L.circleMarker([g.lat,g.lon], {
+        renderer:canvas, radius:r, color:COR[cand], weight:sobe?1:2, opacity:.95,
+        fillColor:COR[cand], fillOpacity:sobe?.32:0
+      });
+      m.on('mouseover', e => { tip.setLatLng(e.latlng).setContent(popup(g,nivel)).addTo(map); });
+      m.on('mouseout', () => map.removeLayer(tip));
+      m.on('click', () => drill(g, nivel));
+      m.addTo(camada);
+    }
+  }
+  $('mapaSub').textContent = `Nível: ${{reg:'região',uf:'estado',mun:'cidade',bai:'bairro',loc:'local de votação'}[nivel]}.` + aviso;
+}
+function drill(g, nivel){
+  map.removeLayer(tip);
+  if(nivel==='reg'){ S.reg = g.k; S.uf=-1; S.mun=-1; S.bai=-1; S.nivel='uf'; }
+  else if(nivel==='uf'){ S.uf = g.k; S.reg=''; S.mun=-1; S.bai=-1; S.nivel='mun'; }
+  else if(nivel==='mun'){ S.mun = g.k; S.uf = D.muns[g.k][1]; S.reg=''; S.bai=-1; S.nivel='bai'; }
+  else if(nivel==='bai'){ S.mun = Math.floor(g.k/KB); S.uf = D.muns[S.mun][1]; S.reg=''; S.bai = g.k%KB; S.nivel='loc'; }
+  else return;
+  sincronizar(); atualizar(true);
+}
+function ajustar(idx){
+  const la=[], lo=[];
+  for(const i of idx) if(c.lat[i]!==0){ la.push(c.lat[i]); lo.push(c.lon[i]); }
+  if(!la.length) return;
+  la.sort((a,b)=>a-b); lo.sort((a,b)=>a-b);
+  const q = (a,p) => a[Math.min(a.length-1, Math.max(0, Math.floor(a.length*p)))];
+  const p = la.length>200 ? .005 : 0;
+  map.fitBounds([[q(la,p), q(lo,p)],[q(la,1-p-1e-9), q(lo,1-p-1e-9)]], {padding:[24,24], maxZoom:14});
+}
+
+/* ---------- ranking ---------- */
+function rank(arr){
+  const bloco = (tit, cor, key) => {
+    const ord = [...arr].sort((a,b)=>b[key]-a[key]);
+    const ganhos = ord.filter(g=>g[key]>0).slice(0,5);
+    const perdas = ord.filter(g=>g[key]<0).reverse().slice(0,5);
+    const linhas = lista => lista.length ? lista.map(g=>`<tr class="cl" data-k="${g.k}"><td>${esc(g.nome)}</td><td class="n">${sgn(g[key])} <span style="color:#6b7280">· ${pct(g[key], g.ap)}</span></td></tr>`).join('') : '<tr><td colspan="2" style="color:#9aa1ab">nenhum</td></tr>';
+    return `<h3 style="color:${cor}">${tit}: maiores ganhos</h3><table>${linhas(ganhos)}</table>
+            <h3 style="color:${cor}">${tit}: maiores perdas</h3><table>${linhas(perdas)}</table>`;
+  };
+  $('rank').innerHTML = `<h2>Maiores variações</h2><p class="sub">No nível do mapa, em votos e em p.p. dos aptos da unidade. Clique numa linha para filtrar.</p>` + bloco('Lula',COR.lula,'dl') + bloco('Flávio',COR.flavio,'df');
+  $('rank').querySelectorAll('tr.cl').forEach(tr => tr.onclick = () => {
+    const k = S.nivel==='reg' ? tr.dataset.k : Number(tr.dataset.k);
+    const g = arr.find(x=>x.k===k); if(g) drill(g, S.nivel);
+  });
+}
+
+/* ---------- gráficos ---------- */
+const LAY = {margin:{l:10,r:10,t:10,b:10}, font:{family:'-apple-system,Segoe UI,Roboto,Arial,sans-serif',size:12}, paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)'};
+const CFG = {displayModeBar:false, responsive:true};
+
+function gBalanco(t){
+  const x = ['Votos dos<br>eliminados (1º t.)','Queda de<br>brancos','Queda de<br>nulos','Queda de<br>abstenção','Δ Lula +<br>Δ Flávio'];
+  const y = [t.o1, -t.db, -t.dn, -t.da, t.dl+t.df];
+  Plotly.react('gBalanco', [{
+    type:'waterfall', x, y, measure:['relative','relative','relative','relative','total'],
+    text:y.map(v=>mi(v)+'<br>'+pct(v,t.ap)), textposition:'outside', cliponaxis:false,
+    hovertemplate:'%{x}<br>%{y:,.0f} votos<extra></extra>',
+    increasing:{marker:{color:COR.verde}}, decreasing:{marker:{color:'#c05621'}}, totals:{marker:{color:'#374151'}},
+    connector:{line:{color:'#cbd2d9'}}
+  }], {...LAY, margin:{l:60,r:10,t:40,b:50}, yaxis:{gridcolor:'#eceff2', zerolinecolor:'#9aa1ab'}, showlegend:false}, CFG);
+  $('notaBalanco').textContent = `Do total de ${mi(t.dl+t.df)} votos ganhos pelos dois (${pct(t.dl+t.df,t.ap)}), ${mi(t.dl)} foram de Lula e ${mi(t.df)} de Flávio. Os p.p. são sobre os eleitores aptos do filtro (${fmt(t.ap)}). Valor negativo nas quedas significa que a categoria cresceu.`;
+  const G = t.dl+t.df, pos = [], neg = [];
+  if(G>0){
+    const fontes = [['votos dos candidatos eliminados no 1º turno', t.o1], ['queda da abstenção', -t.da], ['queda de brancos e nulos', -(t.db+t.dn)]].sort((a,b)=>b[1]-a[1]);
+    pos.push(`A principal fonte do ganho líquido de ${mi(G)} foi ${fontes[0][0]}: ${mi(fontes[0][1])} (${fmtd(fontes[0][1]/G*100,0)}% do ganho).`);
+    if(t.da<0) pos.push(`A abstenção caiu ${fmt(-t.da)} votos (${pct(t.da,t.ap)}), o que trouxe eleitores novos para os dois candidatos.`);
+    pos.push(`Lula ficou com ${fmtd(t.dl/G*100,0)}% do ganho líquido e Flávio com ${fmtd(t.df/G*100,0)}%.`);
+  }
+  if(t.da>0) neg.push(`A abstenção subiu ${fmt(t.da)} votos (${pct(t.da,t.ap)}), reduzindo o ganho dos dois.`);
+  if(t.db+t.dn>0) neg.push(`Brancos e nulos subiram ${fmt(t.db+t.dn)} votos (${pct(t.db+t.dn,t.ap)}), consumindo parte dos votos dos eliminados.`);
+  if(G<=0) neg.push(`Neste filtro os dois candidatos juntos tiveram variação líquida de ${mi(G)}.`);
+  if(!pos.length) pos.push('Nenhuma fonte de ganho líquido neste filtro.');
+  ins('iBalanco', pos, neg);
+}
+
+/* insights do mapa e do ranking */
+function insMapa(arr){
+  const pos=[], neg=[], tot = arr.length;
+  const nome = k => k==='dl' ? 'Lula' : 'Flávio';
+  const lin = (g,k) => `${esc(g.nome)} (${sgn(g[k])} votos, ${pct(g[k],g.ap)})`;
+  for(const k of ['dl','df']){
+    if(!S[k==='dl'?'lula':'flavio']) continue;
+    const cor = k==='dl' ? COR.lula : COR.flavio;
+    const ord = [...arr].sort((a,b)=>b[k]-a[k]);
+    const sobe = arr.filter(g=>g[k]>0).length, desce = arr.filter(g=>g[k]<0);
+    if(ord[0][k]>0) pos.push(`${cl(cor,nome(k))}: maior ganho em ${lin(ord[0],k)}; cresceu em ${sobe} de ${tot} ${un[S.nivel]} (${fmtd(sobe/tot*100,0)}%).`);
+    if(desce.length){ const w = ord[ord.length-1]; neg.push(`${cl(cor,nome(k))}: maior perda em ${lin(w,k)}; perdeu votos em ${desce.length} de ${tot} ${un[S.nivel]} (${fmtd(desce.length/tot*100,0)}%), somando ${sgn(desce.reduce((s,g)=>s+g[k],0))} votos.`); }
+    else neg.push(`${cl(cor,nome(k))}: não perdeu votos em nenhuma das ${tot} ${un[S.nivel]}.`);
+  }
+  ins('iMapa', pos, neg);
+}
+
+function gUnid(idx){
+  const nivel = S.bai>=0 ? 'loc' : S.mun>=0 ? 'bai' : (S.uf>=0 || S.reg) ? 'mun' : 'uf';
+  let arr = agrupar(idx, nivel);
+  let tit;
+  const todas = arr;
+  if(nivel==='uf'){ arr.sort((a,b)=>b.dl-a.dl); tit = 'Variação por estado'; }
+  else { arr.sort((a,b)=>(Math.abs(b.dl)+Math.abs(b.df))-(Math.abs(a.dl)+Math.abs(a.df))); arr = arr.slice(0,20); tit = nivel==='mun' ? 'Variação nas 20 cidades com maior movimento' : nivel==='bai' ? 'Variação nos 20 bairros com maior movimento' : 'Variação nos 20 locais com maior movimento'; }
+  $('tComp').textContent = tit;
+  const nomes = arr.map(g=>g.nome);
+  const tr = [];
+  const txt = key => arr.map(g=>`${kk(g[key])} · ${pct(g[key],g.ap)}`);
+  const cd = key => arr.map(g=>[g[key], g[key]/g.ap*100, g.ap]);
+  const ht = '%{y}<br>%{customdata[0]:,.0f} votos<br>%{customdata[1]:+.2f} p.p. dos %{customdata[2]:,.0f} aptos<extra>%{fullData.name}</extra>';
+  if(S.lula) tr.push({type:'bar', orientation:'h', name:'Lula', y:nomes, x:arr.map(g=>g.dl), text:txt('dl'), customdata:cd('dl'), hovertemplate:ht, textposition:'outside', cliponaxis:false, marker:{color:COR.lula}});
+  if(S.flavio) tr.push({type:'bar', orientation:'h', name:'Flávio', y:nomes, x:arr.map(g=>g.df), text:txt('df'), customdata:cd('df'), hovertemplate:ht, textposition:'outside', cliponaxis:false, marker:{color:COR.flavio}});
+  // a altura do contêiner acompanha o gráfico, senão ele vaza para a seção de baixo
+  const h = Math.max(420, arr.length*(S.lula&&S.flavio?30:18)+70);
+  $('gUnid').style.height = h+'px';
+  // folga nas pontas para os rótulos externos não cobrirem os nomes das unidades
+  const vals = arr.flatMap(g=>[S.lula?g.dl:0, S.flavio?g.df:0]), vmax = Math.max(0,...vals), vmin = Math.min(0,...vals), span = (vmax-vmin)||1;
+  const xr = [vmin<0 ? vmin-span*.55 : 0, vmax+span*.3];
+  Plotly.react('gUnid', tr, {...LAY, barmode:'group', height:h, margin:{l:150,r:20,t:10,b:30},
+    yaxis:{autorange:'reversed', automargin:true}, xaxis:{range:xr, gridcolor:'#eceff2', zerolinecolor:'#9aa1ab', automargin:true}, legend:{orientation:'h', y:1.03}}, CFG);
+  Plotly.Plots.resize('gUnid');
+  // insights
+  const pos=[], neg=[], minAp = todas.reduce((s,g)=>s+g.ap,0)*0.005;
+  for(const [k,nm,cor,on] of [['dl','Lula',COR.lula,S.lula],['df','Flávio',COR.flavio,S.flavio]]){
+    if(!on) continue;
+    const ord = [...todas].sort((a,b)=>b[k]-a[k]);
+    const top = ord.filter(g=>g[k]>0).slice(0,3), fim = ord.filter(g=>g[k]<0).reverse().slice(0,3);
+    if(top.length) pos.push(`${cl(cor,nm)}: maiores ganhos em votos: ${top.map(g=>`${esc(g.nome)} (${kk(g[k])})`).join(', ')}.`);
+    const rel = todas.filter(g=>g.ap>=minAp).sort((a,b)=>b[k]/b.ap-a[k]/a.ap);
+    if(rel.length>1 && rel[0][k]>0) pos.push(`${cl(cor,nm)}: maior ganho proporcional: ${esc(rel[0].nome)} (${pct(rel[0][k],rel[0].ap)}, ${kk(rel[0][k])} votos).`);
+    if(fim.length) neg.push(`${cl(cor,nm)}: maiores perdas em votos: ${fim.map(g=>`${esc(g.nome)} (${kk(g[k])})`).join(', ')}.`);
+    const r0 = rel[rel.length-1];
+    if(rel.length>1 && r0[k]<0) neg.push(`${cl(cor,nm)}: pior variação proporcional: ${esc(r0.nome)} (${pct(r0[k],r0.ap)}, ${kk(r0[k])} votos).`);
+    const q = todas.filter(g=>g[k]<0).length;
+    if(!fim.length) neg.push(`${cl(cor,nm)}: não perdeu votos em nenhuma das ${todas.length} unidades.`);
+    else neg.push(`${cl(cor,nm)} perdeu votos em ${q} de ${todas.length} unidades (${fmtd(q/todas.length*100,0)}%).`);
+  }
+  ins('iUnid', pos, neg, ['Os rankings acima consideram todas as unidades do filtro, não só as exibidas no gráfico. "Proporcional" ignora unidades com menos de 0,5% dos aptos do filtro.']);
+}
+
+/* ---------- perfil cruzado (mapa de calor) ---------- */
+const PERFIL = {
+  mu:{rot:'% de mulheres', curto:'% mulheres', f:i=>c.mu[i]/c.pe[i]*100},
+  i1:{rot:'% de 16 a 24 anos', curto:'% 16–24 anos', f:i=>c.i1[i]/c.pe[i]*100},
+  i2:{rot:'% de 25 a 44 anos', curto:'% 25–44 anos', f:i=>c.i2[i]/c.pe[i]*100},
+  i3:{rot:'% de 45 a 59 anos', curto:'% 45–59 anos', f:i=>c.i3[i]/c.pe[i]*100},
+  i4:{rot:'% de 60 anos ou mais', curto:'% 60 anos ou mais', f:i=>c.i4[i]/c.pe[i]*100},
+  e0:{rot:'% sem instrução (analfabeto ou lê e escreve)', curto:'% sem instrução', f:i=>c.e0[i]/c.pe[i]*100},
+  e1:{rot:'% com ensino fundamental', curto:'% ensino fundamental', f:i=>c.e1[i]/c.pe[i]*100},
+  e2:{rot:'% com ensino médio', curto:'% ensino médio', f:i=>c.e2[i]/c.pe[i]*100},
+  e3:{rot:'% com ensino superior', curto:'% ensino superior', f:i=>c.e3[i]/c.pe[i]*100},
+  rd:{rot:'Renda média do responsável (R$ e salários mínimos, raio de 1 km)', curto:'Renda média do responsável', f:i=>c.rd[i], ok:i=>c.rd[i]>0, renda:true}
+};
+const fv = (k,v) => PERFIL[k].renda ? 'R$ '+fmt(v)+' · '+fmtd(v/SM,1)+' SM' : fmtd(v,0)+'%';
+const METS = {
+  l:{rot:'Lula', cor:COR.lula, neg:'#4b5563', d:g=>g.l2-g.l1, bom:1},
+  f:{rot:'Flávio', cor:COR.flavio, neg:'#4b5563', d:g=>g.f2-g.f1, bom:1},
+  bn:{rot:'Brancos + nulos', cor:'#7c5cbf', neg:'#0f8b8d', d:g=>g.b2+g.n2-g.b1-g.n1, bom:-1},
+  ab:{rot:'Abstenção', cor:COR.ambar, neg:'#0f8b8d', d:g=>g.ab2-g.ab1, bom:-1}
+};
+const HF = ['ap','l1','l2','f1','f2','b1','b2','n1','n2','ab1','ab2'];
+const novoG = () => { const g = {n:0}; for(const f of HF) g[f]=0; return g; };
+
+/* quintis ponderados pelos aptos; devolve o quintil de cada local de idx e a média de cada quintil */
+function quint(idx, key){
+  const P = PERFIL[key], v = idx.map(P.f);
+  const ord = idx.map((_,j)=>j).sort((a,b)=>v[a]-v[b]);
+  let tot = 0; for(const i of idx) tot += c.ap[i];
+  const q = new Int8Array(idx.length), s = [0,0,0,0,0], w = [0,0,0,0,0];
+  let acc = 0;
+  for(const j of ord){
+    const a = c.ap[idx[j]], k = Math.min(4, Math.floor((acc + a/2)/tot*5));
+    acc += a; q[j] = k; s[k] += v[j]*a; w[k] += a;
+  }
+  return {q, media: s.map((x,k)=>w[k]?x/w[k]:0)};
+}
+const hex = h => [1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+/* escala: se todas as células têm o mesmo sinal, vai do menor ao maior valor (mais contraste); senão, é centrada em zero */
+function corCel(v, esc, M){
+  const {min, max, mesmo} = esc;
+  const t = mesmo ? .08 + .92*(Math.abs(v)-min)/Math.max(max-min,1e-9) : Math.min(1, Math.abs(v)/max), a = hex(v>=0 ? M.cor : M.neg);
+  const u = Math.pow(t, .8), rgb = a.map(x=>Math.round(255-(255-x)*u));
+  const lum = .299*rgb[0]+.587*rgb[1]+.114*rgb[2];
+  return `background:rgb(${rgb});color:${lum<150?'#fff':'#1b1f24'}`;
+}
+
+function heat(idx){
+  RESUMO_HEAT = '';
+  const k1 = S.h1, k2 = S.h2, P1 = PERFIL[k1], P2 = PERFIL[k2], M = METS[S.met];
+  const base = idx.filter(i=>c.pe[i]>0 && c.ap[i]>0 && (!P1.ok||P1.ok(i)) && (!P2.ok||P2.ok(i)));
+  if(base.length<50){
+    $('heat').innerHTML = '<p class="sub" style="padding:30px 6px">Poucos locais no filtro atual para formar 25 grupos. Amplie o filtro.</p>';
+    $('heatEscala').innerHTML = ''; $('notaHeat').textContent = ''; ins('iHeat', [], ['Poucos locais no filtro para este cruzamento.']); return;
+  }
+  const A = quint(base,k1), B = quint(base,k2);
+  const cel = Array.from({length:5},()=>Array.from({length:5},novoG));
+  const lin = Array.from({length:5},novoG), col = Array.from({length:5},novoG), tot = novoG();
+  base.forEach((i,j) => {
+    const a = A.q[j], b = B.q[j];
+    for(const g of [cel[a][b], lin[a], col[b], tot]){ for(const f of HF) g[f]+=c[f][i]; g.n++; }
+  });
+  const pp = g => M.d(g)/g.ap*100;
+  const valido = g => g.n>=5 && g.ap>=tot.ap*0.003;
+  const vs = []; for(const r of cel) for(const g of r) if(valido(g)) vs.push(pp(g));
+  const mesmo = vs.length>0 && (vs.every(v=>v>=0) || vs.every(v=>v<=0));
+  const ab = vs.map(Math.abs), max = Math.max(...ab, 1e-9), escala = {min:Math.min(...ab), max, mesmo};
+  const td = (g, extra='', tit='') => {
+    if(g.n<5) return `<td class="vazio ${extra}" title="Menos de 5 locais neste grupo">–</td>`;
+    return `<td class="${extra}" style="${corCel(pp(g),escala,M)}" title="${esc(tit)}${tit?' | ':''}${fmt(g.n)} locais · ${fmt(g.ap)} aptos (${fmtd(g.ap/tot.ap*100,1)}% do filtro) · ${sgn(M.d(g))} votos"><b>${sgnd(pp(g),2)} p.p.</b><small>${kk(M.d(g))} votos</small></td>`;
+  };
+  const rotQ = (k, A, q) => `Q${q+1}<small>${fv(k, A.media[q])}</small>`;
+  let h = `<table class="heat"><colgroup><col style="width:15%">${'<col>'.repeat(6)}</colgroup><tr><th class="corner">↓ ${esc(P1.curto)}<br>→ ${esc(P2.curto)}</th>`;
+  for(let b=0;b<5;b++) h += `<th>${rotQ(k2,B,b)}</th>`;
+  h += `<th class="tot">Todos<small>${P2.curto}</small></th></tr>`;
+  for(let a=0;a<5;a++){
+    h += `<tr><th>${rotQ(k1,A,a)}</th>`;
+    for(let b=0;b<5;b++) h += td(cel[a][b], '', `${P1.curto} ${fv(k1,A.media[a])} (Q${a+1}) × ${P2.curto} ${fv(k2,B.media[b])} (Q${b+1})`);
+    h += td(lin[a], 'tot', `${P1.curto} ${fv(k1,A.media[a])} (Q${a+1}), todos`) + '</tr>';
+  }
+  h += `<tr><th class="tot">Todos<small>${P1.curto}</small></th>`;
+  for(let b=0;b<5;b++) h += td(col[b], 'tot', `${P2.curto} ${fv(k2,B.media[b])} (Q${b+1}), todos`);
+  h += td(tot, 'tot', 'Todos os locais do filtro') + '</tr></table>';
+  $('heat').innerHTML = h;
+  const gr = !mesmo ? `${M.neg},#fff,${M.cor}` : `#fff,${vs[0]>=0?M.cor:M.neg}`;
+  $('heatEscala').innerHTML = mesmo
+    ? `<span>${fmtd(vs[0]>=0?escala.min:-escala.max,2)} p.p.</span><i style="background:linear-gradient(90deg,${vs[0]>=0?'#fff,'+M.cor:M.neg+',#fff'})"></i><span>${fmtd(vs[0]>=0?escala.max:-escala.min,2)} p.p. (${esc(M.rot)}, escala do menor ao maior valor das 25 células)</span>`
+    : `<span>${esc(M.rot)}: queda</span><i style="background:linear-gradient(90deg,${gr})"></i><span>alta</span><span>(±${fmtd(max,2)} p.p. dos aptos nas pontas)</span>`;
+  $('notaHeat').textContent = `${fmt(base.length)} locais, ${fmt(tot.ap)} eleitores aptos. Q1 = 20% dos eleitores nos locais com o menor valor da característica; Q5 = 20% nos locais com o maior. Abaixo de cada Q, o valor médio. Células com menos de 5 locais aparecem vazias. Cada característica é dividida em quintis separadamente, então grupos de características correlacionadas (por exemplo, superior e renda) podem ter poucos locais nos cantos.`;
+
+  // insights
+  const lista = [];
+  for(let a=0;a<5;a++) for(let b=0;b<5;b++) if(valido(cel[a][b])) lista.push({a,b,g:cel[a][b],p:pp(cel[a][b])});
+  const pos=[], neg=[], info=[];
+  const desc = x => `${esc(P1.curto)} ${fv(k1,A.media[x.a])} (Q${x.a+1}) com ${esc(P2.curto)} ${fv(k2,B.media[x.b])} (Q${x.b+1})`;
+  const frase = (x, rot) => `${rot}: locais com ${desc(x)}: ${sgnd(x.p,2)} p.p. (${sgn(M.d(x.g))} votos; ${fmt(x.g.n)} locais, ${fmtd(x.g.ap/tot.ap*100,1)}% dos aptos).`;
+  if(lista.length){
+    const mx = lista.reduce((u,v)=>v.p>u.p?v:u), mn = lista.reduce((u,v)=>v.p<u.p?v:u);
+    const altaTxt = `Maior alta de ${esc(M.rot)}`, quedaTxt = `Maior queda de ${esc(M.rot)}`;
+    if(M.bom>0){ if(mx.p>0) pos.push(frase(mx, altaTxt)); if(mn.p<0) neg.push(frase(mn, quedaTxt)); else neg.push(`${esc(M.rot)} não caiu em nenhum dos grupos com tamanho relevante.`); }
+    else { if(mn.p<0) pos.push(frase(mn, quedaTxt)); if(mx.p>0) neg.push(frase(mx, altaTxt)); }
+  }
+  const tend = (k, P, G, Ax) => `Ao longo de ${esc(P.curto)}, de Q1 (${fv(k,Ax.media[0])}) a Q5 (${fv(k,Ax.media[4])}): ${esc(M.rot)} vai de ${sgnd(pp(G[0]),2)} p.p. a ${sgnd(pp(G[4]),2)} p.p. (diferença de ${sgnd(pp(G[4])-pp(G[0]),2)} p.p.).`;
+  if(lin[0].n>=5 && lin[4].n>=5) info.push(tend(k1,P1,lin,A));
+  if(col[0].n>=5 && col[4].n>=5) info.push(tend(k2,P2,col,B));
+  if(lista.length){
+    const mx2 = lista.reduce((u,v)=>v.p>u.p?v:u), mn2 = lista.reduce((u,v)=>v.p<u.p?v:u);
+    RESUMO_HEAT = `No cruzamento escolhido (${esc(P1.curto)} × ${esc(P2.curto)}), a variação de ${esc(M.rot)} é maior em locais com ${desc(mx2)} e menor em locais com ${desc(mn2)}.`;
+  }
+  ins('iHeat', pos, neg, info);
+}
+
+/* ---------- perfil das áreas que mais ganharam / perderam ---------- */
+const FKEYS = Object.keys(PERFIL);
+const PROF = 3;       // profundidade máxima da árvore (até 8 regras)
+const MIN_FOLHA = .02; // cada regra cobre pelo menos 2% dos aptos do filtro
+const CINZA = '#6b7280';
+
+/* pontos de corte: quantis de 5% em 5%, ponderados pelos aptos */
+function cortes(v, w, tot){
+  const n = v.length, ord = Array.from({length:n},(_,j)=>j).sort((a,b)=>v[a]-v[b]);
+  const E = []; let acc = 0, p = 1;
+  for(const j of ord){
+    acc += w[j];
+    while(p<=19 && acc/tot >= p*.05){ if(!E.length || v[j]>E[E.length-1]) E.push(v[j]); p++; }
+  }
+  return E;
+}
+function preparar(base){
+  const n = base.length, w = new Float64Array(n); let tot = 0;
+  for(let j=0;j<n;j++){ w[j] = c.ap[base[j]]; tot += w[j]; }
+  const F = FKEYS.map(k => {
+    const P = PERFIL[k], v = new Float64Array(n);
+    for(let j=0;j<n;j++) v[j] = P.f(base[j]);
+    const E = cortes(v, w, tot), bin = new Uint8Array(n);
+    let m = 0; for(let j=0;j<n;j++) m += v[j]*w[j];
+    m /= tot;
+    let s2 = 0; for(let j=0;j<n;j++){ bin[j] = E.findIndex(e=>v[j]<=e); if(bin[j]<0) bin[j] = E.length; s2 += w[j]*(v[j]-m)**2; }
+    return {k, v, E, bin, m, sd:Math.sqrt(s2/tot)||1};
+  });
+  // chave para medir consistência: estados se o filtro tem vários; senão, cidades
+  const ufs = new Set(base.map(i=>c.uf[i])), muns = new Set(base.map(i=>c.mun[i]));
+  const gk = ufs.size>1 ? base.map(i=>c.uf[i]) : muns.size>1 ? base.map(i=>c.mun[i]) : null;
+  const gnome = ufs.size>1 ? 'estados' : 'cidades';
+  const Q = FKEYS.map(k => quint(base, k));
+  return {n, w, tot, F, gk, gnome, Q};
+}
+
+/* árvore de regressão ponderada: y = variação em p.p., peso = aptos */
+function arvore(P, y){
+  const {n, w, F, tot} = P, minW = tot*MIN_FOLHA, folhas = [];
+  function cresce(rows, conds, prof){
+    let W = 0, WY = 0, WY2 = 0;
+    for(const j of rows){ const t = w[j]*y[j]; W += w[j]; WY += t; WY2 += t*y[j]; }
+    let melhor = null;
+    if(prof<PROF && rows.length>=40){
+      const ref = WY*WY/W;
+      for(let f=0; f<F.length; f++){
+        const nb = F[f].E.length+1, bin = F[f].bin;
+        const sw = new Float64Array(nb), sy = new Float64Array(nb), sn = new Int32Array(nb);
+        for(const j of rows){ const b = bin[j]; sw[b] += w[j]; sy[b] += w[j]*y[j]; sn[b]++; }
+        let lw = 0, ly = 0, ln = 0;
+        for(let b=0; b<nb-1; b++){
+          lw += sw[b]; ly += sy[b]; ln += sn[b];
+          const rw = W-lw, ry = WY-ly, rn = rows.length-ln;
+          if(lw<minW || rw<minW || ln<20 || rn<20) continue;
+          const g = ly*ly/lw + ry*ry/rw - ref;
+          if(!melhor || g>melhor.g) melhor = {g, f, b};
+        }
+      }
+    }
+    if(!melhor){ folhas.push({rows, conds, W, WY, WY2}); return; }
+    const bin = F[melhor.f].bin, e = F[melhor.f].E[melhor.b], L = [], R = [];
+    for(const j of rows) (bin[j]<=melhor.b ? L : R).push(j);
+    cresce(L, [...conds, {f:melhor.f, hi:e}], prof+1);
+    cresce(R, [...conds, {f:melhor.f, lo:e}], prof+1);
+  }
+  cresce(Array.from({length:n},(_,j)=>j), [], 0);
+  return folhas;
+}
+
+const fvv = (k, v) => PERFIL[k].renda ? rendaTxt(v) : fmtd(v,1)+'%';
+function regraTxt(conds){
+  const m = new Map();
+  for(const d of conds){
+    const o = m.get(d.f) || {lo:-Infinity, hi:Infinity};
+    if(d.lo!==undefined) o.lo = Math.max(o.lo, d.lo);
+    if(d.hi!==undefined) o.hi = Math.min(o.hi, d.hi);
+    m.set(d.f, o);
+  }
+  return [...m].map(([f,o]) => {
+    const k = FKEYS[f], P = PERFIL[k], fm = v => P.renda ? fmtd(v/SM,1)+' SM' : fmtd(v,1)+'%', nm = P.renda ? 'renda do responsável' : P.curto;
+    if(isFinite(o.lo) && isFinite(o.hi)) return `${nm} entre ${fm(o.lo)} e ${fm(o.hi)}`;
+    return isFinite(o.lo) ? `${nm} acima de ${fm(o.lo)}` : `${nm} até ${fm(o.hi)}`;
+  });
+}
+
+/* resumo de um conjunto de locais (posições j de base) */
+function resumirJ(base, js, dv){
+  const r = {n:js.length, ap:0, pe:0, dv:0, rs:0, rw:0}; for(const k of FKEYS) if(!PERFIL[k].renda) r[k] = 0;
+  for(const j of js){
+    const i = base[j]; r.ap += c.ap[i]; r.pe += c.pe[i]; r.dv += dv[j]; r.rs += c.rd[i]*c.ap[i]; r.rw += c.ap[i];
+    for(const k of FKEYS) if(!PERFIL[k].renda) r[k] += c[k][i];
+  }
+  return r;
+}
+const valR = (k, r) => PERFIL[k].renda ? r.rs/r.rw : r[k]/r.pe*100;
+
+/* em quantos estados (ou cidades) a regra supera (ou fica abaixo de) a média do próprio estado */
+function consistencia(P, folha, y, alta){
+  if(!P.gk) return '';
+  const tot = new Map(), fl = new Map();
+  for(let j=0;j<P.n;j++){ const g = P.gk[j], t = tot.get(g) || [0,0]; t[0] += P.w[j]; t[1] += P.w[j]*y[j]; tot.set(g, t); }
+  for(const j of folha.rows){ const g = P.gk[j], t = fl.get(g) || [0,0,0]; t[0] += P.w[j]; t[1] += P.w[j]*y[j]; t[2]++; fl.set(g, t); }
+  let m = 0, ok = 0;
+  for(const [g,t] of fl){ if(t[2]<10) continue; m++; const mg = tot.get(g)[1]/tot.get(g)[0], ml = t[1]/t[0]; if(alta ? ml>mg : ml<mg) ok++; }
+  return m>=3 ? ` · ${alta?'acima':'abaixo'} da média ${P.gnome==='estados'?'do estado':'da cidade'} em ${ok} de ${m} ${P.gnome}` : '';
+}
+
+function cartao(P, folha, y, dv, alta, cor, mediaPP){
+  const mean = folha.WY/folha.W;
+  const dvot = folha.rows.reduce((s,j)=>s+dv[j],0);
+  const chips = regraTxt(folha.conds).map(t=>`<span class="chip">${esc(t)}</span>`).join('');
+  return `<div class="rc" style="border-left-color:${alta?cor:CINZA}">
+    <div class="rt"><span class="${alta?'sp':'sn'}">${alta?'▲':'▼'}</span> <b>${sgnd(mean,2)} p.p.</b> · ${sgn(dvot)} votos <span class="rm">(média do filtro: ${sgnd(mediaPP,2)} p.p.)</span></div>
+    <div class="rr">${chips || '<span class="rm">sem regra: todos os locais</span>'}</div>
+    <div class="rm">${fmt(folha.rows.length)} locais · ${fmtd(folha.W/P.tot*100,1)}% dos aptos${consistencia(P, folha, y, alta)}</div></div>`;
+}
+
+function corZ(z, cor){
+  const t = Math.min(1, Math.abs(z)/.9), a = hex(z>=0 ? cor : CINZA), u = Math.pow(t,.8);
+  const rgb = a.map(x=>Math.round(255-(255-x)*u)), lum = .299*rgb[0]+.587*rgb[1]+.114*rgb[2];
+  return `background:rgb(${rgb});color:${lum<150?'#fff':'#1b1f24'}`;
+}
+
+let CACHE = {key:''};
+let RESUMO_REGRAS = [], RESUMO_HEAT = '';
+function perfilAreas(idx){
+  RESUMO_REGRAS = [];
+  const key = [S.reg, S.uf, S.mun, S.bai].join('|');
+  if(CACHE.key!==key){
+    const base = idx.filter(i=>c.pe[i]>0 && c.ap[i]>0 && c.rd[i]>0);
+    CACHE = {key, base, P: base.length>=200 ? preparar(base) : null};
+  }
+  const {base, P} = CACHE;
+  if(!P){
+    for(const id of ['perfilResumo','regras','tabComp','quintPanels']) $(id).innerHTML = '';
+    $('perfilResumo').innerHTML = '<p class="sub">Poucos locais com perfil e renda no filtro atual (mínimo de 200). Amplie o filtro.</p>';
+    ins('iComp', [], ['Poucos locais no filtro para descrever o perfil das áreas.']); return;
+  }
+  const X = S.tam/100, n = P.n, cands = [['Lula',COR.lula,'l'],['Flávio',COR.flavio,'f']].filter(x=>x[2]==='l'?S.lula:S.flavio);
+  const resumo = [], cartoes = [], linhas = [], pos = [], neg = [], quintHtml = [], info = [];
+  let h = `<table class="comp perfil"><tr><th>Grupo de locais</th><th>Locais</th><th>Variação</th>${FKEYS.map(k=>`<th>${esc(PERFIL[k].renda?'Renda do responsável':PERFIL[k].curto)}</th>`).join('')}</tr>`;
+  for(const [nome, cor, ch] of cands){
+    const dv = new Float64Array(n), y = new Float64Array(n);
+    for(let j=0;j<n;j++){ const i = base[j]; dv[j] = ch==='l' ? c.l2[i]-c.l1[i] : c.f2[i]-c.f1[i]; y[j] = dv[j]/P.w[j]*100; }
+    const mediaPP = dv.reduce((s,v)=>s+v,0)/P.tot*100;
+    // árvore e regras
+    const folhas = arvore(P, y).map(f=>({...f, mean:f.WY/f.W})).sort((a,b)=>b.mean-a.mean);
+    const nTop = Math.min(3, Math.ceil(folhas.length/2)), nBot = Math.min(3, Math.floor(folhas.length/2));
+    const top = folhas.slice(0,nTop), low = nBot ? folhas.slice(-nBot).reverse() : [];
+    let sseT = 0, WYt = 0, Wt = 0, sseL = 0;
+    for(const f of folhas){ WYt += f.WY; Wt += f.W; sseT += f.WY2; sseL += f.WY2 - f.WY*f.WY/f.W; }
+    sseT -= WYt*WYt/Wt;
+    const r2 = sseT>0 ? 1-sseL/sseT : 0;
+    // grupos pelos extremos (por % dos aptos)
+    const ord = Array.from({length:n},(_,j)=>j).sort((a,b)=>y[a]-y[b]);
+    let acc = 0; const gB = [], gT = [];
+    for(const j of ord){ const f = (acc + P.w[j]/2)/P.tot; acc += P.w[j]; if(f<X) gB.push(j); else if(f>1-X) gT.push(j); }
+    const rT = resumirJ(base, gT, dv), rB = resumirJ(base, gB, dv), rA = resumirJ(base, ord, dv);
+    // cartões
+    cartoes.push(`<div><h3 style="color:${cor}">${nome}: onde mais ganhou</h3>${top.map(f=>cartao(P,f,y,dv,true,cor,mediaPP)).join('') || '<p class="rm">Nenhum padrão claro neste filtro.</p>'}
+      <h3 style="color:${cor}">${nome}: onde teve a menor variação</h3>${low.map(f=>cartao(P,f,y,dv,false,cor,mediaPP)).join('') || '<p class="rm">Nenhum padrão claro neste filtro.</p>'}</div>`);
+    // tabela de perfil
+    const linha = (rot, r, comCor) => {
+      let s = `<tr${comCor?'':' class="todos"'}><td>${rot}</td><td>${fmt(r.n)}</td><td>${sgnd(r.dv/r.ap*100,2)} p.p.<br><small>${kk(r.dv)} votos</small></td>`;
+      FKEYS.forEach((k,f) => {
+        const v = valR(k,r), va = valR(k,rA), d = v-va, z = d/P.F[f].sd;
+        const txt = PERFIL[k].renda ? `R$ ${fmt(v)}<br><small>${fmtd(v/SM,1)} SM${comCor?` · ${sgnd(d/SM,1)} SM`:''}</small>` : `${fmtd(v,1)}%${comCor?`<br><small>${sgnd(d,1)} p.p.</small>`:''}`;
+        s += `<td${comCor?` style="${corZ(z,cor)}"`:''}>${txt}</td>`;
+      });
+      return s + '</tr>';
+    };
+    h += `<tr class="cab"><td colspan="${FKEYS.length+3}" style="color:${cor}">${nome}</td></tr>`
+       + linha(`Onde mais ganhou (${S.tam}% dos aptos)`, rT, true) + linha(`Menor variação (${S.tam}% dos aptos)`, rB, true) + linha('Todos os locais', rA, false);
+    // painéis de quintis
+    const sh = (js) => FKEYS.map((k,f)=>{ const s = [0,0,0,0,0]; let t = 0; for(const j of js){ s[P.Q[f].q[j]] += P.w[j]; t += P.w[j]; } return s.map(v=>t?v/t:0); });
+    const sT = sh(gT), sB = sh(gB);
+    quintHtml.push(`<div><h3 style="color:${cor}">${nome}</h3><div class="qgrid">${FKEYS.map((k,f)=>{
+      const bars = (s,co) => s.map((v,q)=>`<i title="Q${q+1} (${fvv(k,P.Q[f].media[q])}): ${fmtd(v*100,0)}% do grupo" style="height:${Math.min(60,v/.5*60)}px;background:${co}"></i>`).join('');
+      return `<div class="qp"><div class="qt">${esc(PERFIL[k].curto)}</div><div class="qb"><span class="base"></span><div class="qg">${bars(sT[f],cor)}</div><div class="qg">${bars(sB[f],CINZA)}</div></div></div>`;
+    }).join('')}</div></div>`);
+    // resumo e insights
+    const frase = f => regraTxt(f.conds).join(', ') || 'todos os locais';
+    RESUMO_REGRAS.push({nome, cor, ganho: frase(top[0]||{conds:[]}), perda: low[0] ? frase(low[0]) : ''});
+    resumo.push(`<p><b style="color:${cor}">${nome}</b> ganhou mais em áreas com <b>${esc(frase(top[0]||{conds:[]}))}</b>${low.length?` e teve a menor variação em áreas com <b>${esc(frase(low[0]))}</b>`:''}.</p>`);
+    const dist = FKEYS.map((k,f)=>({k, z:(valR(k,rT)-valR(k,rA))/P.F[f].sd, zb:(valR(k,rB)-valR(k,rA))/P.F[f].sd, v:valR(k,rT), vb:valR(k,rB), a:valR(k,rA)}));
+    const dt = [...dist].sort((a,b)=>Math.abs(b.z)-Math.abs(a.z)).filter(d=>Math.abs(d.z)>=.15).slice(0,3);
+    const db = [...dist].sort((a,b)=>Math.abs(b.zb)-Math.abs(a.zb)).filter(d=>Math.abs(d.zb)>=.15).slice(0,3);
+    const d1 = (d,v) => `${esc(PERFIL[d.k].curto)} ${fvv(d.k,v)} contra ${fvv(d.k,d.a)} na média`;
+    if(top.length){
+      const t0 = top[0];
+      pos.push(`${cl(cor,nome)}: a regra de maior ganho (${esc(frase(t0))}) cobre ${fmtd(t0.W/P.tot*100,1)}% dos aptos e teve ${sgnd(t0.mean,2)} p.p., contra ${sgnd(mediaPP,2)} p.p. na média do filtro.`);
+      if(dt.length) pos.push(`${cl(cor,nome)}: nos ${S.tam}% de áreas que mais ganharam, os fatores que mais se afastam da média: ${dt.map(d=>d1(d,d.v)).join('; ')}.`);
+    }
+    if(low.length){
+      const l0 = low[0];
+      neg.push(`${cl(cor,nome)}: a regra de menor variação (${esc(frase(l0))}) cobre ${fmtd(l0.W/P.tot*100,1)}% dos aptos e teve ${sgnd(l0.mean,2)} p.p.`);
+      if(db.length) neg.push(`${cl(cor,nome)}: nos ${S.tam}% de áreas de menor variação, os fatores que mais se afastam da média: ${db.map(d=>d1(d,d.vb)).join('; ')}.`);
+    }
+    const queda = [...Array(n).keys()].filter(j=>dv[j]<0);
+    neg.push(queda.length ? `${cl(cor,nome)} perdeu votos em termos absolutos em ${fmt(queda.length)} de ${fmt(n)} locais (${fmtd(queda.length/n*100,1)}%), somando ${sgn(queda.reduce((s,j)=>s+dv[j],0))} votos.` : `${cl(cor,nome)} não perdeu votos em termos absolutos em nenhum dos ${fmt(n)} locais.`);
+    info.push(`${cl(cor,nome)}: as ${folhas.length} regras acima explicam ${fmtd(r2*100,0)}% da variação entre locais; o restante vem de fatores que não estão nos dados (campanha local, histórico, outros).`);
+  }
+  info.push(`${fmt(n)} locais com perfil e renda no filtro (${fmt(idxPerdidos(idx,n))} sem renda do Censo ficaram de fora desta seção).`);
+  $('perfilResumo').innerHTML = resumo.join('');
+  $('regras').innerHTML = cartoes.join('');
+  $('tabComp').innerHTML = h + `</table><p class="nota">Cor = diferença para a média de todos os locais do filtro, em desvios-padrão entre locais (cor do candidato = acima da média; cinza = abaixo). "Onde mais ganhou" e "menor variação" são os ${S.tam}% de eleitores aptos em locais com a maior e a menor variação em p.p. Renda em R$ e em salários mínimos (SM, R$ 1.621).</p>`;
+  $('quintPanels').innerHTML = quintHtml.join('');
+  ins('iComp', pos, neg, info);
+}
+const idxPerdidos = (idx, n) => idx.filter(i=>c.pe[i]>0 && c.ap[i]>0).length - n;
+
+/* ---------- resumo executivo ---------- */
+const NOMEF = {mu:'mulheres', i1:'jovens de 16 a 24 anos', i2:'eleitores de 25 a 44 anos', i3:'eleitores de 45 a 59 anos', i4:'eleitores com 60 anos ou mais',
+  e0:'eleitores sem instrução', e1:'eleitores com ensino fundamental', e2:'eleitores com ensino médio', e3:'eleitores com ensino superior'};
+const PK = ['mu','i1','i2','i3','i4','e0','e1','e2','e3'];
+const REFTXT = {uf:'da região', mun:'do estado', bai:'da cidade', loc:'do bairro'};
+const chaveNivel = (i, nivel) => nivel==='reg' ? ufReg[c.uf[i]] : nivel==='uf' ? c.uf[i] : nivel==='mun' ? c.mun[i] : nivel==='bai' ? c.mun[i]*KB + c.bai[i] : i;
+
+function unidadesPerfil(idx, nivel){
+  const arr = agrupar(idx, nivel), m = new Map(arr.map(g=>[g.k,g]));
+  for(const g of arr){ g.pe = 0; g.rs = 0; g.rw = 0; for(const k of PK) g[k] = 0; }
+  for(const i of idx){
+    const g = m.get(chaveNivel(i,nivel)); g.pe += c.pe[i];
+    for(const k of PK) g[k] += c[k][i];
+    if(c.rd[i]>0){ g.rs += c.rd[i]*c.ap[i]; g.rw += c.ap[i]; }
+  }
+  return arr;
+}
+function pool(us){
+  const r = {ap:0, pe:0, rs:0, rw:0, dl:0, df:0}; for(const k of PK) r[k] = 0;
+  for(const g of us){ for(const k of ['ap','pe','rs','rw','dl','df',...PK]) r[k] += g[k]; }
+  return r;
+}
+const fval = (k, g) => k==='rd' ? (g.rw>0 ? g.rs/g.rw : NaN) : (g.pe>0 ? g[k]/g.pe*100 : NaN);
+const fmtF = (k, v) => k==='rd' ? `R$ ${fmt(v)} · ${fmtd(v/SM,1)} SM` : fmtd(v,1)+'%';
+
+function sdUnid(us){
+  const o = {};
+  for(const k of FKEYS){
+    let w = 0, m = 0; for(const g of us){ const v = fval(k,g); if(isFinite(v)){ w += g.ap; m += v*g.ap; } }
+    m /= w || 1; let s = 0; for(const g of us){ const v = fval(k,g); if(isFinite(v)) s += g.ap*(v-m)**2; }
+    o[k] = Math.sqrt(s/(w||1)) || 1;
+  }
+  return o;
+}
+/* características em que um grupo de unidades mais se afasta da média */
+function descDifs(g, ref, sd, min=.4, nmax=3){
+  const d = FKEYS.map(k=>{ const v = fval(k,g), a = fval(k,ref); return {k, v, a, z:(v-a)/sd[k]}; })
+    .filter(o=>isFinite(o.z) && Math.abs(o.z)>=min && Math.abs(o.v-o.a) >= (o.k==='rd' ? .15*SM : 1)).sort((a,b)=>Math.abs(b.z)-Math.abs(a.z)).slice(0,nmax);
+  if(!d.length) return null;
+  return d.map(o => (o.k==='rd' ? (o.z>0?'renda do responsável mais alta':'renda do responsável mais baixa') : (o.z>0?'mais ':'menos ')+NOMEF[o.k])
+    + ` (${fmtF(o.k,o.v)} contra ${fmtF(o.k,o.a)})`).join('; ');
+}
+function corrP(x, y, w){
+  let sw = 0, mx = 0, my = 0; for(let i=0;i<x.length;i++){ sw += w[i]; mx += w[i]*x[i]; my += w[i]*y[i]; }
+  mx /= sw; my /= sw; let sxy = 0, sxx = 0, syy = 0;
+  for(let i=0;i<x.length;i++){ sxy += w[i]*(x[i]-mx)*(y[i]-my); sxx += w[i]*(x[i]-mx)**2; syy += w[i]*(y[i]-my)**2; }
+  return sxy/Math.sqrt(sxx*syy);
+}
+
+/* contraste local a local: variação média nos 20% de eleitores com mais x nos 20% com menos de cada característica */
+function contrastes(idx){
+  const base = idx.filter(i=>c.pe[i]>0 && c.ap[i]>0 && c.rd[i]>0), n = base.length;
+  if(n<200) return null;
+  const w = new Float64Array(n), yl = new Float64Array(n), yf = new Float64Array(n);
+  for(let j=0;j<n;j++){ const i = base[j]; w[j] = c.ap[i]; yl[j] = (c.l2[i]-c.l1[i])/w[j]*100; yf[j] = (c.f2[i]-c.f1[i])/w[j]*100; }
+  const sd = y => { let s = 0, m = 0, t = 0; for(let j=0;j<n;j++){ t += w[j]; m += w[j]*y[j]; } m /= t; for(let j=0;j<n;j++) s += w[j]*(y[j]-m)**2; return Math.sqrt(s/t)||1; };
+  const sl = sd(yl), sf = sd(yf), Q = [];
+  const cs = FKEYS.map(k => {
+    const qk = quint(base, k), {q, media} = qk, W = [0,0], A = [0,0], B = [0,0];
+    Q.push(qk);
+    for(let j=0;j<n;j++){ if(q[j]!==0 && q[j]!==4) continue; const s = q[j]===0 ? 0 : 1; W[s] += w[j]; A[s] += w[j]*yl[j]; B[s] += w[j]*yf[j]; }
+    const dl = A[1]/W[1]-A[0]/W[0], df = B[1]/W[1]-B[0]/W[0];
+    return {k, dl, df, zl:dl/sl, zf:df/sf, lo:media[0], hi:media[4]};
+  });
+  return {cs, base, n, Q};
+}
+
+/* melhor e pior combinação de duas características (25 grupos), para cada variável, em todos os pares */
+function htmlPares(ct, NL, NF){
+  const {base, n, Q} = ct, FLD = ['ap','l1','l2','f1','f2','b1','b2','n1','n2','ab1','ab2'];
+  const arr = FLD.map(f => { const a = new Float64Array(n); for(let j=0;j<n;j++) a[j] = c[f][base[j]]; return a; });
+  let totAp = 0; for(let j=0;j<n;j++) totAp += arr[0][j];
+  const dcel = (m, o, acc) => m==='l' ? acc[o+2]-acc[o+1] : m==='f' ? acc[o+4]-acc[o+3] : m==='bn' ? acc[o+6]+acc[o+8]-acc[o+5]-acc[o+7] : acc[o+10]-acc[o+9];
+  const grupos = [], rk = {l:[], f:[]}, rn = {l:[], f:[]};
+  for(let a=0; a<FKEYS.length; a++) for(let b=a+1; b<FKEYS.length; b++){
+    const acc = new Float64Array(25*12), qa = Q[a].q, qb = Q[b].q;
+    for(let j=0;j<n;j++){ const o = (qa[j]*5+qb[j])*12; for(let f=0;f<11;f++) acc[o+f] += arr[f][j]; acc[o+11]++; }
+    const k1 = FKEYS[a], k2 = FKEYS[b];
+    // duas faixas de idade (i1..i4), ou duas de escolaridade (e0..e3), se excluem entre si
+    if((/^i\d$/.test(k1) && /^i\d$/.test(k2)) || (/^e\d$/.test(k1) && /^e\d$/.test(k2))) continue;
+    const desc = cel => `${esc(PERFIL[k1].curto)} de ${fmtF(k1,Q[a].media[cel.a])} (Q${cel.a+1}) e ${esc(PERFIL[k2].curto)} de ${fmtF(k2,Q[b].media[cel.b])} (Q${cel.b+1})`;
+    const curto = cel => `${esc(PERFIL[k1].curto)} ${fmtF(k1,Q[a].media[cel.a])} e ${esc(PERFIL[k2].curto)} ${fmtF(k2,Q[b].media[cel.b])}`;
+    const li = [];
+    for(const [m, nome] of [['l',cl(COR.lula,'Lula')],['f',cl(COR.flavio,'Flávio')],['bn','<b>Brancos + nulos</b>'],['ab','<b>Abstenção</b>']]){
+      let mx = null, mn = null;
+      for(let q=0;q<25;q++){
+        const o = q*12, ap = acc[o];
+        if(acc[o+11]<5 || ap<totAp*.003) continue;
+        const d = dcel(m,o,acc), cel = {a:Math.floor(q/5), b:q%5, p:d/ap*100};
+        if(!mx || cel.p>mx.p) mx = cel;
+        if(!mn || cel.p<mn.p) mn = cel;
+      }
+      if(!mx || (mx.a===mn.a && mx.b===mn.b)) continue;
+      if(m==='l' || m==='f'){ rk[m].push({p:mx.p, t:curto(mx)}); rn[m].push({p:mn.p, t:curto(mn)}); }
+      li.push(`<li>${nome}: ${mx.p>0?'maior alta':'menor queda'} em locais com ${desc(mx)} (${sgnd(mx.p,2)} p.p. dos aptos); ${mn.p<0?'maior queda':'menor alta'} em locais com ${desc(mn)} (${sgnd(mn.p,2)} p.p.).</li>`);
+    }
+    if(li.length) grupos.push(`<details class="par"><summary>${esc(PERFIL[k1].curto)} × ${esc(PERFIL[k2].curto)}</summary><ul>${li.join('')}</ul></details>`);
+  }
+  const lista = (arr, dir) => arr.sort((x,y)=>dir*(y.p-x.p)).slice(0,3).map(o=>`${o.t} (${sgnd(o.p,2)} p.p.)`).join('; ');
+  const resumo = [['l',NL],['f',NF]].map(([m,nome]) => {
+    const pior = rn[m].length ? Math.min(...rn[m].map(o=>o.p)) : 0;
+    return `${nome}, olhando todas as combinações: <b>maiores altas</b> em locais com ${lista(rk[m],1)}. <b>${pior<0?'Quedas e menores altas':'Menores altas'}</b> em locais com ${lista(rn[m],-1)}.`;
+  });
+  return {resumo, html: `<details class="pares"><summary>Ver todas as ${grupos.length} combinações de característica 1 × característica 2 (Lula, Flávio, brancos + nulos e abstenção)</summary><p class="nota">Em cada combinação, o local é dividido em 25 grupos (quintis das duas características). Os pontos mostram o grupo com a maior e o de menor variação em p.p. dos aptos, só entre grupos com pelo menos 5 locais e 0,3% dos aptos do recorte. Q1 = menor valor da característica, Q5 = maior.</p>${grupos.join('')}</details>`};
+}
+
+function resumoEscopo(idx, nivel, titulo, unico){
+  const NL = cl(COR.lula,'Lula'), NF = cl(COR.flavio,'Flávio'), t = somar(idx);
+  const pan = [], onde = [], perf = [], atn = [], comb = [];
+  // com um único recorte escolhido, a cidade/UF no nome da unidade é redundante
+  const sn = x => unico && nivel!=='uf' ? x.replace(/ · .*$/,'').replace(/\/[A-Z]{2}$/,'') : x;
+  const un1 = {uf:'estado', mun:'cidade', bai:'bairro', loc:'local de votação'}[nivel], unN = un[nivel], refT = REFTXT[nivel];
+
+  /* panorama */
+  const L = t.dl, F = t.df, G = L+F;
+  let comp;
+  if(L>0 && F>0){
+    const r = Math.max(L,F)/Math.min(L,F), lider = L>=F ? NL : NF, outro = L>=F ? NF : NL;
+    comp = r<1.15 ? `Os dois cresceram de forma parecida em votos.` : `${lider} cresceu ${r>=2?`cerca de ${fmtd(r,1)} vezes mais`:'mais'} que ${outro} em votos${r>=2?'':` (${fmtd((r-1)*100,0)}% a mais)`}.`;
+  } else if(L>0 || F>0){ comp = `Só ${L>0?NL:NF} cresceu em votos; ${L>0?NF:NL} ficou praticamente no mesmo nível.`; }
+  else comp = `Nenhum dos dois cresceu em votos neste recorte.`;
+  pan.push(`${NL} passou de ${miAbs(t.l1)} para ${miAbs(t.l2)} votos (${pct(L,t.ap)} dos aptos) e ${NF} de ${miAbs(t.f1)} para ${miAbs(t.f2)} (${pct(F,t.ap)}). ${comp}`);
+  if(G>0){
+    const fontes = [['dos eleitores dos candidatos eliminados no 1º turno', t.o1], ['da queda da abstenção', -t.da], ['da queda de brancos e nulos', -(t.db+t.dn)]].sort((a,b)=>b[1]-a[1]);
+    pan.push(`O ganho conjunto veio principalmente ${fontes[0][0]}${fontes[1][1]>G*.15?`, depois ${fontes[1][0]}`:''}.`);
+  }
+  pan.push(`A abstenção ${t.da<0?'caiu':'subiu'} de ${fmtd(t.ab1/Math.max(t.ap,1)*100,1)}% para ${fmtd(t.ab2/Math.max(t.ap,1)*100,1)}% dos aptos${(t.db+t.dn)>0?' e brancos e nulos aumentaram':''}.`);
+
+  /* onde cada um ganhou */
+  const units = unidadesPerfil(idx, nivel), nUn = units.length;
+  let elig = [];
+  if(nUn<2) onde.push(`Este recorte tem só um${nivel==='loc'?' local de votação':'a unidade'}; não há comparação entre lugares.`);
+  else {
+    const minAp = t.ap*.005;
+    elig = units.filter(g=>g.ap>=minAp && g.pe>0);
+    if(elig.length<Math.min(4,nUn)) elig = units.filter(g=>g.pe>0);
+    const K = elig.length<=5 ? 1 : elig.length<=8 ? 2 : elig.length<=15 ? 3 : 5;
+    const pp = (g,k) => g[k]/g.ap*100;
+    const top = (k, f, dir=1) => [...elig].sort((a,b)=>dir*(f(b,k)-f(a,k))).slice(0,K);
+    const nm = a => a.map(g=>esc(sn(g.nome))).join(', ');
+    const topLa = top('dl',(g,k)=>g[k]), topFa = top('df',(g,k)=>g[k]);
+    const topLp = top('dl',pp), topFp = top('df',pp);
+    const comAbs = topLa.filter(g=>topFa.some(h=>h.k===g.k)).length, comPro = topLp.filter(g=>topFp.some(h=>h.k===g.k));
+    onde.push(`Em votos absolutos, os maiores ganhos de ${NL} estão em ${nm(topLa)}; os de ${NF}, em ${nm(topFa)}${comAbs===K?': os dois cresceram mais nos mesmos lugares (que são os maiores)':comAbs===0?': lugares diferentes':`: ${comAbs} de ${K} lugares coincidem`}.`);
+    const verd = comPro.length===K ? `Ou seja, proporcionalmente os dois também cresceram mais nos mesmos ${unN}.`
+      : comPro.length===0 ? `Ou seja, cada candidato cresceu mais em ${unN} diferentes: nenhum dos ${K} primeiros de um aparece na lista do outro.`
+      : `Há sobreposição parcial: ${comPro.length} de ${K} ${unN} aparecem nas duas listas (${nm(comPro)}).`;
+    onde.push(`Em proporção aos eleitores de cada ${un1}, ${NL} cresceu mais em ${nm(topLp)}; ${NF}, em ${nm(topFp)}. ${verd}`);
+    if(elig.length>=6){
+      const r = corrP(elig.map(g=>pp(g,'dl')), elig.map(g=>pp(g,'df')), elig.map(g=>g.ap));
+      onde.push(r>=.4 ? `No conjunto dos ${fmt(elig.length)} ${unN}${elig.length<nUn?' com pelo menos 0,5% dos eleitores do recorte':''}, os dois tendem a crescer nos mesmos lugares (onde um cresce mais, o outro também cresce mais).`
+        : r<=-.2 ? `No conjunto dos ${fmt(elig.length)} ${unN}${elig.length<nUn?' com pelo menos 0,5% dos eleitores do recorte':''}, os dois crescem em lugares opostos: onde um cresce mais, o outro tende a crescer menos.`
+        : `No conjunto dos ${fmt(elig.length)} ${unN}${elig.length<nUn?' com pelo menos 0,5% dos eleitores do recorte':''}, o crescimento de um quase não acompanha o do outro: cada um tem seus próprios focos.`);
+    }
+    if(elig.length<6) onde.push(`Há poucos ${unN} neste recorte para descrever o perfil de cada um; veja o perfil local a local logo abaixo.`);
+    if(elig.length>=6){
+      const ref = pool(elig), sd = sdUnid(elig), dl = descDifs(pool(topLp), ref, sd), df = descDifs(pool(topFp), ref, sd);
+      if(comPro.length===K && K>=2) onde.push(`Esses mesmos ${unN} têm: ${dl||`perfil muito próximo da média ${refT}`}, em comparação com a média ${refT}.`);
+      else {
+        onde.push(`Onde ${NL} mais cresceu (${nm(topLp)}): ${dl||'perfil muito próximo da média'}, em comparação com a média ${refT}.`);
+        onde.push(`Onde ${NF} mais cresceu (${nm(topFp)}): ${df||'perfil muito próximo da média'}, em comparação com a média ${refT}.`);
+      }
+      const baL = top('dl',pp,-1), baF = top('df',pp,-1);
+      const bl = descDifs(pool(baL), ref, sd), bf = descDifs(pool(baF), ref, sd);
+      onde.push(`Onde ${NL} cresceu menos (${nm(baL)}): ${bl||'perfil próximo da média'}. Onde ${NF} cresceu menos (${nm(baF)}): ${bf||'perfil próximo da média'}.`);
+    }
+  }
+
+  /* perfil local a local, comparando os dois candidatos */
+  const ct = contrastes(idx), cs = ct && ct.cs;
+  if(!cs) perf.push('Poucos locais com perfil e renda neste recorte para comparar características (mínimo de 200).');
+  else {
+    const rel = cs.filter(o=>Math.max(Math.abs(o.zl),Math.abs(o.zf))>=.25).sort((a,b)=>Math.max(Math.abs(b.zl),Math.abs(b.zf))-Math.max(Math.abs(a.zl),Math.abs(a.zf))).slice(0,5);
+    if(!rel.length) perf.push('Nenhuma característica de perfil distingue com força as áreas em que cada candidato cresceu mais: o crescimento foi espalhado por todos os tipos de área.');
+    for(const o of rel){
+      const area = o.k==='rd' ? `áreas de renda do responsável mais alta (${fmtF('rd',o.hi)} contra ${fmtF('rd',o.lo)} nas de renda mais baixa)` : `áreas com mais ${NOMEF[o.k]} (${fmtd(o.hi,0)}% contra ${fmtd(o.lo,0)}% nas de menos)`;
+      const a = o.zl>=.25?1:o.zl<=-.25?-1:0, b = o.zf>=.25?1:o.zf<=-.25?-1:0;
+      let txt;
+      if(a>0 && b<0) txt = `viraram mais para ${NL} e menos para ${NF}`;
+      else if(a<0 && b>0) txt = `viraram mais para ${NF} e menos para ${NL}`;
+      else if(a>0 && b>0) txt = `cresceram mais para os dois, e mais em votos para ${o.dl>=o.df?NL:NF}`;
+      else if(a<0 && b<0) txt = `cresceram menos para os dois, e menos ainda para ${o.dl<=o.df?NL:NF}`;
+      else if(a>0) txt = `favoreceram ${NL}; ${NF} cresceu de forma parecida em qualquer tipo de área`;
+      else if(a<0) txt = `foram piores para ${NL}; ${NF} cresceu de forma parecida em qualquer tipo de área`;
+      else if(b>0) txt = `favoreceram ${NF}; ${NL} cresceu de forma parecida em qualquer tipo de área`;
+      else txt = `foram piores para ${NF}; ${NL} cresceu de forma parecida em qualquer tipo de área`;
+      perf.push(`${area[0].toUpperCase()+area.slice(1)} ${txt}.`);
+    }
+  }
+
+  /* pontos de atenção */
+  if(nUn>=2){
+    for(const [k,nome] of [['dl',NL],['df',NF]]){
+      const perd = units.filter(g=>g[k]<0).sort((a,b)=>a[k]-b[k]);
+      if(!perd.length){ atn.push(`${nome} não perdeu votos em nenhum${nivel==='loc'?'':'a'} d${nivel==='loc'?'os':'as'} ${fmt(nUn)} ${unN}.`); continue; }
+      const nomes = perd.slice(0,3).map(g=>esc(sn(g.nome))).join(', ');
+      let car = '';
+      if(perd.length>=2 && elig.length>=6){ const d = descDifs(pool(perd), pool(elig), sdUnid(elig)); if(d) car = ` Esses lugares têm ${d}, em comparação com a média ${refT}.`; }
+      atn.push(`${nome} perdeu votos em ${fmt(perd.length)} de ${fmt(nUn)} ${unN} (${fmtd(perd.length/nUn*100,0)}%), com maior queda em ${nomes}.${car}`);
+    }
+  }
+  if(t.da>0) atn.push(`A abstenção subiu neste recorte, o que reduziu o ganho dos dois.`);
+
+  /* combinando fatores (só quando há um único recorte; usa as regras e o cruzamento mostrados acima) */
+  if(unico){
+    for(const r of RESUMO_REGRAS) comb.push(`${cl(r.cor,r.nome)} cresceu mais em áreas com ${esc(r.ganho)}${r.perda?` e menos em áreas com ${esc(r.perda)}`:''}.`);
+    if(RESUMO_HEAT) comb.push(RESUMO_HEAT.replace('No cruzamento escolhido','No cruzamento selecionado na seção acima'));
+  }
+
+  const par = ct ? htmlPares(ct, NL, NF) : null;
+  if(par) comb.unshift(...par.resumo);
+  const bloco = (tit, l) => l.length ? `<h4>${tit}</h4><ul>${l.map(x=>`<li>${x}</li>`).join('')}</ul>` : '';
+  const corpo = bloco('Panorama', pan) + bloco('Onde cada um ganhou, e se foi nos mesmos lugares', onde) + bloco('Que tipo de área virou para cada candidato', perf)
+    + (comb.length || ct ? `<h4>Combinando vários fatores</h4>${comb.length?`<ul>${comb.map(x=>`<li>${x}</li>`).join('')}</ul>`:''}${par?par.html:''}` : '') + bloco('Pontos de atenção', atn);
+  return unico ? `<div class="rs"><h3>${titulo}</h3>${corpo}</div>` : `<details class="rs" open><summary>${titulo}</summary>${corpo}</details>`;
+}
+
+function resumoExecutivo(idx){
+  if(!idx.length){ $('resumo').innerHTML = ''; return; }
+  if(!S.reg && S.uf<0 && S.mun<0 && S.bai<0){
+    $('resumoSub').textContent = 'Sem filtros: um resumo para cada uma das 5 regiões do país. Os números são sempre sobre o filtro atual.';
+    $('resumo').innerHTML = REGS.map(r => resumoEscopo(idx.filter(i=>ufReg[c.uf[i]]===r), 'uf', `Região ${r}`, false)).join('');
+    return;
+  }
+  const nivel = S.bai>=0 ? 'loc' : S.mun>=0 ? 'bai' : S.uf>=0 ? 'mun' : 'uf';
+  let titulo;
+  if(S.bai>=0) titulo = `Bairro ${esc(nomeBairro(S.bai))}, ${esc(D.muns[S.mun][0])}/${D.ufs[D.muns[S.mun][1]]}`;
+  else if(S.mun>=0) titulo = `Cidade de ${esc(D.muns[S.mun][0])}/${D.ufs[D.muns[S.mun][1]]}`;
+  else if(S.uf>=0) titulo = `Estado ${D.ufs[S.uf]}`;
+  else titulo = `Região ${S.reg}`;
+  $('resumoSub').textContent = 'Resumo do recorte escolhido nos filtros. Muda a cada filtro aplicado.';
+  $('resumo').innerHTML = resumoEscopo(idx, nivel, titulo, true);
+}
+
+/* ---------- filtros ---------- */
+function opt(v, t, sel){ return `<option value="${esc(v)}"${sel?' selected':''}>${esc(t)}</option>`; }
+function sincronizar(){
+  $('fReg').innerHTML = opt('', 'Todas', !S.reg) + REGS.map(r=>opt(r, r, S.reg===r)).join('');
+  const ufsOk = D.ufs.map((u,i)=>i).filter(i=>ufReg[i] && (!S.reg || ufReg[i]===S.reg));
+  $('fUf').innerHTML = opt('-1','Todos', S.uf<0) + ufsOk.map(i=>opt(i, D.ufs[i], S.uf===i)).join('');
+  const munOk = S.uf>=0 ? D.muns.map((m,i)=>[m[0],i,m[1]]).filter(x=>x[2]===S.uf).sort((a,b)=>a[0].localeCompare(b[0],'pt-BR')) : [];
+  $('fMun').disabled = S.uf<0;
+  $('fMun').innerHTML = opt('-1', S.uf<0?'Escolha um estado':'Todas', S.mun<0) + munOk.map(x=>opt(x[1], x[0], S.mun===x[1])).join('');
+  $('fBai').disabled = S.mun<0;
+  let bs = [];
+  if(S.mun>=0){ const set = new Set(); for(let i=0;i<N;i++) if(c.mun[i]===S.mun) set.add(c.bai[i]); bs = [...set].map(b=>[D.bairros[b]||'(sem bairro)', b]).sort((a,b)=>a[0].localeCompare(b[0],'pt-BR')); }
+  $('fBai').innerHTML = opt('-1', S.mun<0?'Escolha uma cidade':'Todos', S.bai<0) + bs.map(x=>opt(x[1], x[0], S.bai===x[1])).join('');
+  document.querySelectorAll('#fNivel button').forEach(b=>b.classList.toggle('on', b.dataset.n===S.nivel));
+  $('fLula').checked = S.lula; $('fFlavio').checked = S.flavio;
+}
+
+function atualizar(refit){
+  const idx = filtrar();
+  if(!idx.length){ $('kpis').innerHTML = '<div class="kpi">Nenhum local no filtro.</div>'; camada.clearLayers(); return; }
+  const t = somar(idx);
+  kpis(t);
+  const arr = agrupar(idx, S.nivel);
+  S.arr = arr;
+  desenhar(arr);
+  if(refit) ajustar(idx);
+  rank(arr); insMapa(arr); gBalanco(t); gUnid(idx); heat(idx); perfilAreas(idx); resumoExecutivo(idx);
+  S.idx = idx;
+}
+
+function csv(){
+  const idx = S.idx || filtrar();
+  const cab = ['UF','MUNICIPIO','BAIRRO_TSE','LOCAL_VOTACAO','SECOES','APTOS','LULA_1T','LULA_2T','DELTA_LULA','FLAVIO_1T','FLAVIO_2T','DELTA_FLAVIO','ELIMINADOS_1T','BRANCOS_1T','BRANCOS_2T','NULOS_1T','NULOS_2T','ABSTENCAO_1T','ABSTENCAO_2T','RENDA_MEDIA_RESP_1KM'];
+  const q = s => '"'+String(s).replace(/"/g,'""')+'"';
+  const lin = [cab.join(';')];
+  for(const i of idx){
+    const m = D.muns[c.mun[i]];
+    lin.push([D.ufs[m[1]], q(m[0]), q(D.bairros[c.bai[i]]||''), q(D.nm[i]), c.sec[i], c.ap[i], c.l1[i], c.l2[i], c.l2[i]-c.l1[i], c.f1[i], c.f2[i], c.f2[i]-c.f1[i], c.o1[i], c.b1[i], c.b2[i], c.n1[i], c.n2[i], c.ab1[i], c.ab2[i], c.rd[i]>0?c.rd[i]:''].join(';'));
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿'+lin.join('\n')], {type:'text/csv;charset=utf-8'}));
+  a.download = 'locais_filtrados.csv'; a.click();
+}
+
+function ligar(){
+  $('fReg').onchange = e => { S.reg = e.target.value; S.uf=-1; S.mun=-1; S.bai=-1; S.nivel = 'uf'; sincronizar(); atualizar(true); };
+  $('fUf').onchange = e => { S.uf = Number(e.target.value); S.mun=-1; S.bai=-1; S.nivel = S.uf>=0 ? 'mun' : 'uf'; sincronizar(); atualizar(true); };
+  $('fMun').onchange = e => { S.mun = Number(e.target.value); S.bai=-1; S.nivel = S.mun>=0 ? 'bai' : 'mun'; sincronizar(); atualizar(true); };
+  $('fBai').onchange = e => { S.bai = Number(e.target.value); S.nivel = S.bai>=0 ? 'loc' : 'bai'; sincronizar(); atualizar(true); };
+  document.querySelectorAll('#fNivel button').forEach(b => b.onclick = () => { S.nivel = b.dataset.n; sincronizar(); atualizar(false); });
+  $('fLula').onchange = e => { S.lula = e.target.checked; atualizar(false); };
+  $('fFlavio').onchange = e => { S.flavio = e.target.checked; atualizar(false); };
+  $('bReset').onclick = () => { Object.assign(S,{reg:'',uf:-1,mun:-1,bai:-1,nivel:'uf',lula:true,flavio:true}); sincronizar(); atualizar(true); };
+  $('bCsv').onclick = csv;
+  const optsH = () => { for(const [id,k] of [['fH1','h1'],['fH2','h2']]) $(id).innerHTML = Object.entries(PERFIL).map(([v,p])=>`<option value="${v}"${v===S[k]?' selected':''}${v===S[k==='h1'?'h2':'h1']?' disabled':''}>${esc(p.rot)}</option>`).join(''); };
+  optsH();
+  $('fH1').onchange = e => { S.h1 = e.target.value; optsH(); heat(S.idx || filtrar()); };
+  $('fH2').onchange = e => { S.h2 = e.target.value; optsH(); heat(S.idx || filtrar()); };
+  document.querySelectorAll('#fTam button').forEach(b => b.onclick = () => {
+    S.tam = Number(b.dataset.t); document.querySelectorAll('#fTam button').forEach(x=>x.classList.toggle('on', x===b)); perfilAreas(S.idx || filtrar());
+  });
+  document.querySelectorAll('#fMetrica button').forEach(b => b.onclick = () => {
+    S.met = b.dataset.m; document.querySelectorAll('#fMetrica button').forEach(x=>x.classList.toggle('on', x===b)); heat(S.idx || filtrar());
+  });
+}
+
+(async function(){
+  D = await carregar(); c = D.c; N = c.ap.length;
+  ufReg = D.ufs.map(u=>REG[u]);
+  map = L.map('mapa', {preferCanvas:true, zoomSnap:.25}).setView([-14.5,-52], 4);
+  // Esri Light Gray: o OpenStreetMap bloqueia (403) páginas abertas via file://, que não enviam Referer
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {maxZoom:16, attribution:'Mapa base © Esri, HERE, Garmin, OpenStreetMap contributors'}).addTo(map);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {maxZoom:16, opacity:.8}).addTo(map);
+  canvas = L.canvas({padding:.3}); camada = L.layerGroup().addTo(map); tip = L.tooltip({sticky:false, direction:'top', opacity:.97});
+  ligar(); sincronizar(); atualizar(true);
+  map.on('zoomend', () => { if(S.arr) desenhar(S.arr); });
+  $('carregando').remove();
+  setTimeout(() => { map.invalidateSize(); ajustar(S.idx); }, 50);
+})().catch(e => { $('carregando').textContent = 'Erro ao carregar os dados: ' + e.message + '. Abra o arquivo num navegador atual (Chrome, Edge, Firefox ou Safari 16.4+).'; });
+</script>
+</body>
+</html>

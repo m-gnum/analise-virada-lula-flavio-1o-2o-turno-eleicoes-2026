@@ -1,0 +1,8 @@
+# dados brutos e intermediários (grandes): baixar com scripts/00_baixar_dados.sh e gerar com os scripts 01 a 04
+dados/
+*.zip
+*.gpkg
+.venv/
+__pycache__/
+saida/*
+!saida/locais_dashboard.parquet
