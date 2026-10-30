@@ -70,7 +70,12 @@ d["sem_instr"] = d.esc_sem_instrucao / p * 100
 d["idade60"] = d.idade_60_mais / p * 100
 d["idade16"] = d.idade_16_24 / p * 100
 d["mulheres_p"] = d.mulheres / p * 100
-VARS = ["renda", "superior", "sem_instr", "idade60", "idade16", "mulheres_p"]
+d["fund"] = d.esc_fundamental / p * 100
+d["medio"] = d.esc_medio / p * 100
+d["idade2544"] = d.idade_25_44 / p * 100
+d["idade4559"] = d.idade_45_59 / p * 100
+VARS = ["renda", "superior", "sem_instr", "idade60", "idade16", "mulheres_p"]  # as seis do R²
+VX = VARS + ["fund", "medio", "idade2544", "idade4559"]  # todas as características do painel, para as correlações
 CAND = {"lula": "Lula", "flavio": "Flávio"}
 SOMAR = ["aptos", "lula_t1", "lula_t2", "flavio_t1", "flavio_t2", "outros_t1", "branco_t1", "branco_t2", "nulo_t1", "nulo_t2", "abst_t1", "abst_t2"]
 
@@ -264,18 +269,24 @@ S2 = {
 SECOES.append(S2)
 
 # ------------------------------------------------------------------ 3. correlações e 4. sem efeito
-base = d[d.aptos >= 100].dropna(subset=VARS + ["dpp_lula", "dpp_flavio"])
-nac = {c: {v: wcorr(base[v].values, base["dpp_" + c].values, base.aptos.values) for v in VARS} for c in CAND}
-FRASE = {
-    "superior": ("eleitores com ensino superior", "o local tem mais eleitores com ensino superior"),
-    "renda": ("renda", "a renda do entorno é maior"),
-    "sem_instr": ("eleitores sem instrução", "o local tem mais eleitores sem instrução"),
-    "mulheres_p": ("mulheres", "o local tem mais mulheres"),
+base = d[d.aptos >= 100].dropna(subset=VX + ["dpp_lula", "dpp_flavio"])
+nac = {c: {v: wcorr(base[v].values, base["dpp_" + c].values, base.aptos.values) for v in VX} for c in CAND}
+LAB = {
+    "renda": "renda no entorno",
+    "superior": "eleitores com ensino superior",
+    "sem_instr": "eleitores sem instrução",
+    "fund": "eleitores com ensino fundamental",
+    "medio": "eleitores com ensino médio",
+    "idade16": "eleitores de 16 a 24 anos",
+    "idade2544": "eleitores de 25 a 44 anos",
+    "idade4559": "eleitores de 45 a 59 anos",
+    "idade60": "eleitores de 60 anos ou mais",
+    "mulheres_p": "mulheres",
 }
 
 
 def frase_r(var, cand, r):
-    return f"quanto mais {FRASE[var][0] if var != 'renda' else 'renda no entorno'}, {'maior' if r > 0 else 'menor'} a variação de {CAND[cand]} (correlação {sgn(r, 2)})"
+    return f"quanto mais {LAB[var]}, {'maior' if r > 0 else 'menor'} a variação de {CAND[cand]} (correlação {sgn(r, 2)})"
 
 
 rows = []
@@ -284,7 +295,7 @@ for k, s in base.groupby("cidade"):
         continue
     r = {"cidade": k, "n": len(s)}
     for c in CAND:
-        for v in VARS:
+        for v in VX:
             r[f"{c}|{v}"] = wcorr(s[v].values, s["dpp_" + c].values, s.aptos.values) if s[v].std() > 0 else np.nan
     rows.append(r)
 CR = pd.DataFrame(rows)
@@ -301,6 +312,8 @@ for k, s in base.groupby("cidade"):
     r = {"cidade": k, "n": len(s)}
     for c in CAND:
         r[c] = sm.WLS(s["dpp_" + c], X, weights=s.aptos).fit().rsquared_adj
+        cs = {v: wcorr(s[v].values, s["dpp_" + c].values, s.aptos.values) for v in VARS if s[v].std() > 0}
+        r[c + "_cs"] = cs
     rows.append(r)
 R2 = pd.DataFrame(rows)
 R2["mn_"] = R2[["lula", "flavio"]].min(axis=1)
@@ -312,7 +325,7 @@ so_l = R2[(R2.flavio < 0.05) & (R2.lula > 0.45)].sort_values("lula", ascending=F
 # estados: correlação por local
 est_r = {}
 for uf, s in base.groupby("uf"):
-    est_r[uf] = {f"{c}|{v}": wcorr(s[v].values, s["dpp_" + c].values, s.aptos.values) for c in CAND for v in VARS}
+    est_r[uf] = {f"{c}|{v}": wcorr(s[v].values, s["dpp_" + c].values, s.aptos.values) for c in CAND for v in VX}
 mun = d.groupby(["uf", "cd_mun", "municipio"]).agg(aptos=("aptos", "sum"), l1=("lula_t1", "sum"), l2=("lula_t2", "sum"), f1=("flavio_t1", "sum"), f2=("flavio_t2", "sum"), taxa=("taxa_cvli_100k", "first")).reset_index()
 mun["dL"] = (mun.l2 - mun.l1) / mun.aptos * 100
 mun["dF"] = (mun.f2 - mun.f1) / mun.aptos * 100
@@ -325,6 +338,46 @@ sb = mun[mun.aptos >= 3000].dropna(subset=["taxa"])
 cv_br = (wcorr(sb.ltx.values, sb.dL.values, sb.aptos.values), wcorr(sb.ltx.values, sb.dF.values, sb.aptos.values))
 dois_sobem = [u for u in ["AC", "AP", "AM", "RR", "TO"] if est_r[u]["lula|renda"] > 0.4 and est_r[u]["flavio|renda"] > 0.4]
 ambos_cid = CR[(CR["lula|renda"] > 0.4) & (CR["flavio|renda"] > 0.4)].sort_values("n", ascending=False).head(6)
+
+
+def cid_top(v, c, sinal, k):
+    x = long[(long.v == v) & (long.c == c) & (long.r * sinal > 0.4)].copy()
+    x["rs"] = x.r * sinal
+    return x.sort_values("rs", ascending=False).head(k)
+
+
+def uf_top(v, c, sinal, k):
+    xs = sorted([(u, e[f"{c}|{v}"]) for u, e in est_r.items() if e[f"{c}|{v}"] * sinal > 0.25], key=lambda t: -t[1] * sinal)
+    return xs[:k]
+
+
+def itm_corr(titulo, specs, nota=""):
+    """specs: (tipo 'c' cidade | 'u' estado, característica, candidato, sinal, quantidade)."""
+    ls = []
+    for t, v, c, sinal, k in specs:
+        if t == "c":
+            ls += [linha(f"{B(r.cidade)}: {frase_r(v, c, r.r)}.", ent_nome(r.cidade)) for r in cid_top(v, c, sinal, k).itertuples()]
+        else:
+            ls += [linha(f"{B(UF_NOME[u])}: {frase_r(v, c, r)}.", ent_e(u)) for u, r in uf_top(v, c, sinal, k)]
+    return item(titulo, ls, nota)
+
+
+def perfil_de(r, c):
+    """Características que mais acompanham a variação do candidato na cidade (as duas mais fortes, se a segunda também for forte)."""
+    cs = r[c + "_cs"]
+    ordem = sorted(cs, key=lambda v: -abs(cs[v]))
+    t = [ordem[0]] + [v for v in ordem[1:2] if abs(cs[v]) >= 0.5 and abs(cs[v]) >= 0.7 * abs(cs[ordem[0]])]
+    return " e ".join(f"{LAB[v]} ({sgn(cs[v], 2)})" for v in t)
+
+
+def linha_r2(r):
+    txt = (
+        f"{B(r.cidade)} ({fm(r.n, 0)} locais): o perfil explica {pc(r.lula)} da variação de Lula e {pc(r.flavio)} da de Flávio. "
+        f"Características mais ligadas à variação: para o Lula, {perfil_de(r._asdict(), 'lula')}; para o Flávio, {perfil_de(r._asdict(), 'flavio')}."
+    )
+    return linha(txt, ent_nome(r.cidade))
+
+
 S3 = {
     "id": "correlacoes",
     "titulo": "3. Correlações muito diretas entre o perfil e a variação",
@@ -338,7 +391,8 @@ S3 = {
         item("Cidades onde o perfil acompanha a variação de forma quase perfeita", [linha(f"{B(r.cidade)}: {frase_r(r.v, r.c, r.r)}.", ent_nome(r.cidade)) for r in forte.itertuples()]),
         item(
             "Cidades onde o perfil explica quase tudo (R² alto)",
-            [linha(f"{B(r.cidade)}: o perfil explica {pc(r.lula)} da variação de Lula e {pc(r.flavio)} da de Flávio ({fm(r.n, 0)} locais).", ent_nome(r.cidade)) for r in alto.itertuples()],
+            [linha_r2(r) for r in alto.itertuples()],
+            "Entre parênteses, a correlação de cada característica com a variação do candidato na cidade (quanto mais perto de ±1, mais ela acompanha). Positiva: onde a característica é maior, o candidato cresceu mais. Negativa: cresceu menos.",
         ),
         item(
             "O contrário do país: bairros com mais eleitores sem instrução, mais ganho do Lula",
@@ -356,6 +410,41 @@ S3 = {
             [linha(f"{B(UF_NOME[u])}: quanto mais mulheres no local, mais o Lula cresceu (correlação {sgn(est_r[u]['lula|mulheres_p'], 2)}).", ent_e(u)) for u in ["AP", "AM", "AC", "RR", "TO"]]
             + [linha(f"{B(UF_NOME[u])}: não há relação entre a presença de mulheres e a variação de {CAND[c]} (correlação {sgn(est_r[u][c + '|mulheres_p'], 2)}).", ent_e(u)) for u, c in [("DF", "lula"), ("SP", "flavio"), ("SC", "flavio")]],
             f"No país, a correlação entre % de mulheres e a variação de Lula é {sgn(nac['lula']['mulheres_p'], 2)}.",
+        ),
+        itm_corr(
+            "Eleitores de 60 anos ou mais",
+            [("c", "idade60", "lula", -1, 6), ("u", "idade60", "lula", -1, 2), ("u", "idade60", "flavio", 1, 2)],
+            f"No país, a correlação entre % de eleitores de 60 anos ou mais e a variação de Lula é {sgn(nac['lula']['idade60'], 2)} (e {sgn(nac['flavio']['idade60'], 2)} para Flávio).",
+        ),
+        itm_corr(
+            "Eleitores de 16 a 24 anos",
+            [("c", "idade16", "lula", 1, 5), ("c", "idade16", "flavio", -1, 2), ("u", "idade16", "flavio", -1, 2), ("u", "idade16", "lula", 1, 1)],
+            f"No país, a correlação entre % de eleitores de 16 a 24 anos e a variação de Flávio é {sgn(nac['flavio']['idade16'], 2)}; para Lula, {sgn(nac['lula']['idade16'], 2)}.",
+        ),
+        itm_corr(
+            "Eleitores de 25 a 44 anos",
+            [("c", "idade2544", "lula", 1, 5), ("c", "idade2544", "flavio", -1, 1), ("u", "idade2544", "lula", 1, 3)],
+            f"No país, a correlação com a variação de Lula é {sgn(nac['lula']['idade2544'], 2)} e com a de Flávio, {sgn(nac['flavio']['idade2544'], 2)}.",
+        ),
+        itm_corr(
+            "Eleitores de 45 a 59 anos",
+            [("c", "idade4559", "lula", -1, 3), ("c", "idade4559", "flavio", 1, 3), ("u", "idade4559", "flavio", 1, 4)],
+            f"No país, a correlação com a variação de Flávio é {sgn(nac['flavio']['idade4559'], 2)} e com a de Lula, {sgn(nac['lula']['idade4559'], 2)}.",
+        ),
+        itm_corr(
+            "Eleitores com ensino médio",
+            [("c", "medio", "lula", 1, 6), ("c", "medio", "flavio", -1, 2), ("u", "medio", "lula", 1, 4)],
+            f"No país, a correlação entre % com ensino médio e a variação de Lula é {sgn(nac['lula']['medio'], 2)}.",
+        ),
+        itm_corr(
+            "Eleitores com ensino fundamental",
+            [("c", "fund", "lula", 1, 5), ("c", "fund", "flavio", -1, 3), ("u", "fund", "lula", 1, 1), ("u", "fund", "flavio", -1, 2), ("u", "fund", "lula", -1, 1)],
+            f"No país, a correlação entre % com ensino fundamental e a variação de Lula é {sgn(nac['lula']['fund'], 2)} (e {sgn(nac['flavio']['fund'], 2)} para Flávio). Dentro de cada cidade, porém, o padrão costuma ser forte, e o sinal muda de um lugar para outro.",
+        ),
+        itm_corr(
+            "Eleitores sem instrução e o Flávio",
+            [("c", "sem_instr", "flavio", -1, 5), ("u", "sem_instr", "flavio", -1, 3)],
+            f"No país, a correlação entre % sem instrução e a variação de Flávio é {sgn(nac['flavio']['sem_instr'], 2)}: onde há mais eleitores sem instrução, ele cresceu menos.",
         ),
         item(
             "Taxa de CVLI e variação, entre as cidades de cada estado",
