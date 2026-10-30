@@ -146,6 +146,9 @@ table.tu td small{display:block;color:var(--mut);font-size:11px;line-height:1.3}
 table.tu th:nth-child(2),table.tu td:nth-child(2){min-width:128px}
 table.tu th:nth-child(3),table.tu td:nth-child(3){min-width:170px;text-align:left;white-space:nowrap}
 table.tu td.bc,table.tu th.bc{text-align:left;min-width:280px;width:26%}
+table.perfil td.sgun{min-width:120px;text-align:center;background:#f3f5f8;color:var(--mut);font-size:12px}
+table.perfil td.sgun b{color:var(--ink);font-size:13.5px}
+table.perfil td.sgun small{display:block;font-size:10.5px}
 table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)}
 .bars{position:relative}
 .bars .br{position:relative;height:15px;margin:1px 0}
@@ -967,7 +970,9 @@ function perfilAreas(idx){
   }
   const X = S.tam/100, n = P.n, cands = [['Lula',COR.lula,'l'],['Flávio',COR.flavio,'f']].filter(x=>x[2]==='l'?S.lula:S.flavio);
   const resumo = [], cartoes = [], linhas = [], pos = [], neg = [], quintHtml = [], info = [];
-  let h = `<table class="comp perfil"><tr><th>Grupo de locais</th><th>Locais</th><th>Variação</th>${FK.map(k=>`<th>${esc(PERFIL[k].renda?'Renda do responsável':PERFIL[k].curto)}</th>`).join('')}</tr>`;
+  // com uma cidade só (ou bairro, ou local) a taxa de CVLI é a mesma em todos os locais: a coluna fica, com a taxa e um aviso
+  const sgUnica = !FK.includes('sg');
+  let h = `<table class="comp perfil"><tr><th>Grupo de locais</th><th>Locais</th><th>Variação</th>${FK.map(k=>`<th>${esc(PERFIL[k].renda?'Renda do responsável':PERFIL[k].curto)}</th>`).join('')}${sgUnica?`<th>${esc(PERFIL.sg.curto)}</th>`:''}</tr>`;
   for(const [nome, cor, ch] of cands){
     const dv = new Float64Array(n), y = new Float64Array(n);
     for(let j=0;j<n;j++){ const i = base[j]; dv[j] = ch==='l' ? c.l2[i]-c.l1[i] : c.f2[i]-c.f1[i]; y[j] = dv[j]/P.w[j]*100; }
@@ -998,9 +1003,10 @@ function perfilAreas(idx){
         const txt = PERFIL[k].renda ? `R$ ${fmt(v)}<br><small>${fmtd(v/SM,1)} SM${comCor?` · ${sgnd(d/SM,1)} SM`:''}</small>` : k==='sg' ? `${fmtd(v,1)}<br><small>por 100 mil${comCor?` · ${sgnd(d,1)}`:''}</small>` : `${fmtd(v,1)}%${comCor?`<br><small>${sgnd(d,1)} p.p.</small>`:''}`;
         s += `<td${comCor?` style="${corZ(z,cor)}"`:''}>${txt}</td>`;
       });
+      if(sgUnica){ const v = valR('sg', r); s += `<td class="sgun">${isFinite(v) ? `<b>${fmtd(v,1)}</b> por 100 mil<br>` : ''}<small>métrica única para a cidade inteira</small></td>`; }
       return s + '</tr>';
     };
-    h += `<tr class="cab"><td colspan="${FK.length+3}" style="color:${cor}">${nome}</td></tr>`
+    h += `<tr class="cab"><td colspan="${FK.length+3+(sgUnica?1:0)}" style="color:${cor}">${nome}</td></tr>`
        + linha(`Onde mais ganhou (${S.tam}% dos aptos)`, rT, true) + linha(`Menor variação (${S.tam}% dos aptos)`, rB, true) + linha('Todos os locais', rA, false);
     // painéis de quintis
     const sh = (js) => FK.map((k,f)=>{ const s = [0,0,0,0,0]; let t = 0; for(const j of js){ s[P.Q[f].q[j]] += P.w[j]; t += P.w[j]; } return s.map(v=>t?v/t:0); });
