@@ -1,6 +1,6 @@
 """Gera index.html (dashboard em arquivo único) e, se existir a base por seção, o CSV por seção.
 
-Lê saida/locais_dashboard.parquet, saida/estatistica.json (script 08) e saida/curiosidades.json (script 09), embute os dados compactados
+Lê saida/locais_dashboard.parquet, saida/pib_municipio.parquet (script 10), saida/estatistica.json (script 08) e saida/curiosidades.json (script 09), embute os dados compactados
 (gzip + base64) no modelo scripts/dashboard_template.html.
 Rodar da raiz da pasta de análise: .venv/bin/python -I scripts/05_dashboard.py
 """
@@ -20,6 +20,9 @@ mun_chave = loc[["uf", "cd_mun", "municipio"]].drop_duplicates(["uf", "cd_mun"])
 # segurança pública (script 07): vítimas de CVLI nos últimos 12 meses e população do Censo 2022, por município
 seg = pd.read_parquet("saida/seguranca_municipio.parquet")[["uf", "cd_mun", "cvli_12m", "pop_2022"]]
 mun_chave = mun_chave.merge(seg, on=["uf", "cd_mun"], how="left")
+# PIB municipal 2023 (script 10): PIB em mil reais e população implícita do per capita do IBGE, por município
+pib = pd.read_parquet("saida/pib_municipio.parquet")[["uf", "cd_mun", "pib_2023_mil", "pop_pib"]]
+mun_chave = mun_chave.merge(pib, on=["uf", "cd_mun"], how="left")
 mun_idx = {(r.uf, r.cd_mun): i for i, r in mun_chave.iterrows()}
 bairros = sorted(loc.bairro.fillna("").str.strip().str.upper().unique())
 bai_idx = {b: i for i, b in enumerate(bairros)}
@@ -53,7 +56,8 @@ cols = {
 dados = {
     "ufs": ufs,
     "muns": [
-        [r.municipio, ufs.index(r.uf), -1 if pd.isna(r.cvli_12m) else int(r.cvli_12m), 0 if pd.isna(r.pop_2022) else int(r.pop_2022)]
+        [r.municipio, ufs.index(r.uf), -1 if pd.isna(r.cvli_12m) else int(r.cvli_12m), 0 if pd.isna(r.pop_2022) else int(r.pop_2022),
+         0 if pd.isna(r.pib_2023_mil) else int(round(r.pib_2023_mil)), 0 if pd.isna(r.pop_pib) else int(round(r.pop_pib))]
         for r in mun_chave.itertuples()
     ],
     "bairros": bairros,

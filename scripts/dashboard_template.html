@@ -263,6 +263,12 @@ button.vp{margin-left:6px;font-size:11px;padding:1px 8px;border-radius:999px;bor
           <option value="ppl">Variação de Lula (p.p. dos aptos)</option>
           <option value="ppf">Variação de Flávio (p.p. dos aptos)</option>
           <option value="ap">Número de eleitores aptos</option>
+          <option value="p1">Renda: % do eleitorado em áreas de menos de 1 SM</option>
+          <option value="p13">Renda: % do eleitorado em áreas de 1 a 3 SM</option>
+          <option value="p35">Renda: % do eleitorado em áreas de 3 a 5 SM</option>
+          <option value="p5">Renda: % do eleitorado em áreas de mais de 5 SM</option>
+          <option value="sg">Taxa de CVLI (por 100 mil hab.)</option>
+          <option value="pib">PIB per capita (2023)</option>
         </select>
       </label>
       <label>Mostrar
@@ -439,6 +445,12 @@ function segSet(ms){
   let v = 0, p = 0;
   for(const m of ms){ const q = D.muns[m]; if(q[2]>=0 && q[3]>0){ v += q[2]; p += q[3]; } }
   return {v, p, taxa: p ? v/p*1e5 : NaN};
+}
+/* PIB per capita de um conjunto de municípios (IBGE, 2023): PIB somado / população implícita somada, não a média dos per capita */
+function pibSet(ms){
+  let v = 0, p = 0;
+  for(const m of ms){ const q = D.muns[m]; if(q[4]>0 && q[5]>0){ v += q[4]; p += q[5]; } }
+  return {v, p, pc: p ? v*1000/p : NaN};
 }
 /* tamanho de uma unidade em relação ao recorte, e comparação da taxa de CVLI com uma referência */
 const szTxt = (ap, tot) => { const f = tot ? ap/tot*100 : 0; return (f>0 && f<.01 ? 'menos de 0,01' : fmtd(f, f<1?2:1))+'% dos aptos'; };
@@ -647,7 +659,7 @@ function indGrupos(idx, nivel, arr){
     g.ms.add(c.mun[i]);
     const r = c.rd[i]; if(r>0){ g.wr += c.ap[i]; g[faixaSM(r)] += c.ap[i]; if(nivel==='loc') g.rdv = r; }
   }
-  for(const g of arr){ for(const [p,w] of [['p1','w1'],['p13','w13'],['p35','w35'],['p5','w5']]) g[p] = g.wr ? g[w]/g.wr*100 : NaN; g.sg = segSet(g.ms); }
+  for(const g of arr){ for(const [p,w] of [['p1','w1'],['p13','w13'],['p35','w35'],['p5','w5']]) g[p] = g.wr ? g[w]/g.wr*100 : NaN; g.sg = segSet(g.ms); g.pb = pibSet(g.ms); }
 }
 function refInd(idx, nivel){
   const w = {w1:0, w13:0, w35:0, w5:0}; let wr = 0; const ms = new Set();
@@ -656,7 +668,7 @@ function refInd(idx, nivel){
   // nos bairros e locais a taxa é a da cidade: a comparação é da cidade com a média do estado
   if(nivel==='bai' || nivel==='loc'){ refMs = new Set(); D.muns.forEach((q,j)=>{ if(q[1]===S.uf) refMs.add(j); }); }
   const pp = k => wr ? w[k]/wr*100 : NaN;
-  return {p1: pp('w1'), p13: pp('w13'), p35: pp('w35'), p5: pp('w5'), sg: segSet(refMs),
+  return {p1: pp('w1'), p13: pp('w13'), p35: pp('w35'), p5: pp('w5'), sg: segSet(refMs), pb: pibSet(refMs),
     nomeInd: {uf: S.reg?'da região':'do Brasil', mun:'do estado', bai:'da cidade', loc:'do bairro'}[nivel],
     nomeSg: nivel==='uf' ? (S.reg?'da região':'do Brasil') : 'do estado'};
 }
@@ -693,7 +705,11 @@ function gUnid(idx){
   const ref = refInd(idx, nivel);
   const T = somar(idx), minApT = T.ap*0.005;
   const ordF = {auto:(a,b)=>(Math.abs(b.dl)+Math.abs(b.df))-(Math.abs(a.dl)+Math.abs(a.df)), dl:(a,b)=>b.dl-a.dl, df:(a,b)=>b.df-a.df, ppl:(a,b)=>b.dl/b.ap-a.dl/a.ap, ppf:(a,b)=>b.df/b.ap-a.df/a.ap, ap:(a,b)=>b.ap-a.ap};
-  const ordRot = {auto:'maior movimento', dl:'variação de Lula (votos)', df:'variação de Flávio (votos)', ppl:'variação de Lula (p.p. dos aptos)', ppf:'variação de Flávio (p.p. dos aptos)', ap:'número de eleitores aptos'};
+  // renda, CVLI e PIB per capita: valores ausentes vão para o fim; nos locais de votação a renda é a média do responsável (faixas baixas: menor primeiro)
+  const porVal = (f, asc) => (a,b) => { const x = f(a), y = f(b), nx = !isFinite(x), ny = !isFinite(y); return nx&&ny ? 0 : nx ? 1 : ny ? -1 : asc ? x-y : y-x; };
+  for(const k of ['p1','p13','p35','p5']) ordF[k] = nivel==='loc' ? porVal(g=>g.rdv, k==='p1'||k==='p13') : porVal(g=>g[k]);
+  ordF.sg = porVal(g=>g.sg.taxa); ordF.pib = porVal(g=>g.pb.pc);
+  const ordRot = {auto:'maior movimento', dl:'variação de Lula (votos)', df:'variação de Flávio (votos)', ppl:'variação de Lula (p.p. dos aptos)', ppf:'variação de Flávio (p.p. dos aptos)', ap:'número de eleitores aptos', p1:'renda (% do eleitorado em áreas de menos de 1 SM)', p13:'renda (% do eleitorado em áreas de 1 a 3 SM)', p35:'renda (% do eleitorado em áreas de 3 a 5 SM)', p5:'renda (% do eleitorado em áreas de mais de 5 SM)', sg:'taxa de CVLI', pib:'PIB per capita'};
   const ord = nivel==='uf' && S.ord==='auto' ? 'dl' : S.ord;
   const todas = arr;
   const qtd = nivel==='uf' || S.qtd==='all' ? Infinity : Number(S.qtd);
@@ -702,7 +718,7 @@ function gUnid(idx){
   const art = nivel==='mun' ? 'nas' : 'nos', todosTxt = nivel==='mun' ? 'todas as' : 'todos os';
   const tit = nivel==='uf' ? 'Variação por estado' : qtd===Infinity ? `Variação em ${todosTxt} ${un[nivel]}, em ordem de ${ordRot[ord]}` : S.ord==='auto' ? `Variação ${art} ${arr.length} ${un[nivel]} com maior movimento` : `Variação ${art} ${arr.length} ${un[nivel]}, em ordem de ${ordRot[ord]}`;
   $('tComp').textContent = tit;
-  $('subUnid').textContent = 'Cada linha mostra o tamanho da unidade (eleitores aptos e % do recorte), o resultado nos dois turnos, a renda das áreas, a taxa de mortes violentas (CVLI) e a variação de votos; as barras trazem a variação em votos de Lula e Flávio e, ao lado, de onde vieram os votos (os mesmos dados do gráfico "De onde vieram os votos": eleitores dos candidatos eliminados no 1º turno e queda de brancos, nulos e abstenção; valor negativo = a categoria cresceu), com o rótulo em p.p. dos eleitores aptos da própria unidade. A taxa de CVLI só existe até o nível de cidade: nos bairros e locais, o valor da cidade se repete.';
+  $('subUnid').textContent = 'Cada linha mostra o tamanho da unidade (eleitores aptos e % do recorte), o resultado nos dois turnos, a renda das áreas, a taxa de mortes violentas (CVLI), o PIB per capita e a variação de votos; as barras trazem a variação em votos de Lula e Flávio e, ao lado, de onde vieram os votos (os mesmos dados do gráfico "De onde vieram os votos": eleitores dos candidatos eliminados no 1º turno e queda de brancos, nulos e abstenção; valor negativo = a categoria cresceu), com o rótulo em p.p. dos eleitores aptos da própria unidade. A taxa de CVLI e o PIB per capita só existem até o nível de cidade: nos bairros e locais, o valor da cidade se repete.';
   // escala das barras (folga nas pontas para os rótulos); cada coluna de barras tem a sua escala
   const escala = vals => { const vmax = Math.max(0,...vals), vmin = Math.min(0,...vals), span = (vmax-vmin)||1, lo = vmin<0 ? vmin-span*.7 : 0, hi = vmax+span*.7; return {xp: v=>(v-lo)/(hi-lo)*100, z0: (0-lo)/(hi-lo)*100}; };
   const barra = (E, v, cor, g, nm) => {
@@ -730,22 +746,30 @@ function gUnid(idx){
     const baixa = g.sg.v<10 ? ' title="Poucas vítimas: a taxa oscila muito de um ano para outro."' : '';
     return `<b>${fmtd(t,1)}</b><small${baixa}>${fmt(g.sg.v)} vítimas${g.sg.v<10?' (base pequena)':''}</small>` + (isFinite(r) ? `<small class="${r>=1.15?'up':r<.87?'dn':''}">${sgnd(d,0)}% · ${rotSeg(r)}</small>` : '');
   };
+  const cp = g => {
+    const v = g.pb.pc; if(!isFinite(v)) return '–';
+    const r = ref.pb.pc, d = r ? (v/r-1)*100 : NaN;
+    return `<b>R$ ${fmtd(v/1000,1)} mil</b>` + (isFinite(d) ? `<small class="${d>=15?'up':d<=-13?'dn':''}">${sgnd(d,0)}% vs. média ${ref.nomeSg}</small>` : '');
+  };
   let h = `<table class="tu"><tr><th>${{uf:'Estado',mun:'Cidade',bai:'Bairro',loc:'Local de votação'}[nivel]}</th>`
     + `<th>Tamanho<small>eleitores aptos</small></th><th>Resultado nos dois turnos<small>% dos votos válidos, 1º → 2º turno</small></th>`
     + (nivel==='loc' ? `<th colspan="4">Renda média do responsável (raio de 1 km)</th>` : INDS.filter(d=>d.rot).map(d=>`<th>Renda média: ${d.rot[0].toLowerCase()+d.rot.slice(1)}<small>% do eleitorado</small></th>`).join(''))
     + `<th>CVLI por 100 mil hab.<small>12 meses, só até a cidade</small></th>`
+    + `<th>PIB per capita<small>2023, só até a cidade</small></th>`
     + `<th class="bc">Variação de votos<small><span class="lg" style="background:${COR.lula}"></span>Lula<span class="lg" style="background:${COR.flavio}"></span>Flávio</small></th>`
     + `<th class="bc">De onde vieram os votos<small>${FONTES.map(f=>`<span class="lg" style="background:${f[2]}"></span>${f[0]}`).join(' ')}</small></th></tr>`;
   for(const g of arr){
     h += `<tr><td>${esc(g.nome)}</td><td>${tam(g)}</td><td>${res(g)}</td>`
       + (nivel==='loc' ? `<td colspan="4" style="text-align:center">${isFinite(g.rdv) ? `<b>${rendaTxt(g.rdv)}</b>` : '–'}</td>` : INDS.filter(d=>d.rot).map(d=>`<td>${ci(g[d.k],ref[d.k])}</td>`).join(''))
       + `<td class="sg">${cs(g)}</td>`
+      + `<td class="sg">${cp(g)}</td>`
       + `<td class="bc"><div class="bars"><div class="zero" style="left:${EV.z0}%"></div>${S.lula?barra(EV,g.dl,COR.lula,g,'Lula'):''}${S.flavio?barra(EV,g.df,COR.flavio,g,'Flávio'):''}</div></td>`
       + `<td class="bc"><div class="bars"><div class="zero" style="left:${EF.z0}%"></div>${FONTES.map(f=>barra(EF,f[1](g),f[2],g,f[0])).join('')}</div></td></tr>`;
   }
   $('tUnid').innerHTML = h + '</table>';
   $('notaUnid').innerHTML = `"Resultado nos dois turnos" compara só Lula e Flávio, em % dos votos válidos (no 1º turno o total inclui os candidatos eliminados); "Virou" indica que a liderança entre os dois mudou. A ordenação por p.p. ignora unidades com menos de 0,5% dos aptos do recorte. As colunas de renda mostram a parte dos eleitores aptos que votam em locais cuja renda média do responsável pelo domicílio (raio de 1 km, Censo 2022, SM = R$ ${fmt(SM)}) fica em cada faixa (menos que 1 SM, entre 1 SM e 3 SM, entre 3 SM e 5 SM e acima de 5 SM; as quatro somam 100%), e, embaixo de cada valor, a diferença em p.p. para a média ${ref.nomeInd}. Não é a % de domicílios nem de pessoas. `
-    + `CVLI = homicídio doloso, feminicídio, latrocínio e lesão corporal seguida de morte (vítimas, out/2025 a set/2026, Sinesp-VDE) por 100 mil habitantes (Censo 2022), com a diferença % para a média ${ref.nomeSg} embaixo; é um dado do município inteiro, que só existe até o nível de cidade${nivel==='bai'||nivel==='loc' ? ': aqui ele se repete em todos os bairros e locais, e a comparação é da cidade com a média do estado' : ' (abaixo da cidade, o valor se repete)'}. Em cidades pequenas a taxa oscila muito com poucos casos.`;
+    + `CVLI = homicídio doloso, feminicídio, latrocínio e lesão corporal seguida de morte (vítimas, out/2025 a set/2026, Sinesp-VDE) por 100 mil habitantes (Censo 2022), com a diferença % para a média ${ref.nomeSg} embaixo; é um dado do município inteiro, que só existe até o nível de cidade${nivel==='bai'||nivel==='loc' ? ': aqui ele se repete em todos os bairros e locais, e a comparação é da cidade com a média do estado' : ' (abaixo da cidade, o valor se repete)'}. Em cidades pequenas a taxa oscila muito com poucos casos. `
+    + `PIB per capita = PIB a preços correntes de 2023 (IBGE, PIB dos Municípios) dividido pela população do IBGE; para estados e regiões, a soma do PIB dos municípios dividida pela soma da população, com a diferença % para a média ${ref.nomeSg} embaixo. Também é um dado do município inteiro: nos bairros e locais o valor da cidade se repete, e valores muito altos costumam refletir atividade econômica concentrada (indústria, petróleo, porto, etc.) mais do que a renda dos moradores. A ordenação por renda, CVLI ou PIB per capita põe no fim as unidades sem o dado.`;
   // insights
   const pos=[], neg=[], minAp = todas.reduce((s,g)=>s+g.ap,0)*0.005, un_ = un[nivel];
   const com = (lst) => { const k = carac(lst, ref, nivel); return k.length ? `, que têm ${k.join('; ')}` : ''; };
@@ -1369,7 +1393,7 @@ function hashLer(){
   if(p.get('lula')==='0') S.lula = false;
   if(p.get('flavio')==='0') S.flavio = false;
   if(['10','20','25'].includes(p.get('tam'))) S.tam = Number(p.get('tam'));
-  if(['auto','dl','df','ppl','ppf','ap'].includes(p.get('ord'))) S.ord = p.get('ord');
+  if(['auto','dl','df','ppl','ppf','ap','p1','p13','p35','p5','sg','pib'].includes(p.get('ord'))) S.ord = p.get('ord');
   if(['20','50','100','all'].includes(p.get('qtd'))) S.qtd = p.get('qtd');
 }
 function marcarBotoes(){

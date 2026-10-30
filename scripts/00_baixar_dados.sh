@@ -54,4 +54,11 @@ done
 mkdir -p dados/ibge_municipios
 [ -s dados/ibge_municipios/localidades_municipios.json ] || curl -fL --retry 3 -o dados/ibge_municipios/localidades_municipios.json "https://servicodados.ibge.gov.br/api/v1/localidades/municipios"
 [ -s dados/ibge_municipios/sidra_4709_populacao_2022.json ] || curl -fL --retry 3 -o dados/ibge_municipios/sidra_4709_populacao_2022.json "https://servicodados.ibge.gov.br/api/v3/agregados/4709/periodos/2022/variaveis/93?localidades=N6%5Ball%5D"
+# IBGE: PIB dos Municípios 2010-2023 (PIB e PIB per capita), script 10; o zip tem acento no nome do arquivo, por isso a extração em python
+mkdir -p dados/ibge_pib
+[ -s dados/ibge_pib/pib_municipios_2010_2023.xlsx ] || {
+  curl -fL --retry 3 -o dados/ibge_pib/base.zip "https://ftp.ibge.gov.br/Pib_Municipios/2022_2023/base/base_de_dados_2010_2023_xlsx.zip"
+  python3 -c "import zipfile; z = zipfile.ZipFile('dados/ibge_pib/base.zip'); open('dados/ibge_pib/pib_municipios_2010_2023.xlsx', 'wb').write(z.read(z.namelist()[0]))"
+  rm dados/ibge_pib/base.zip
+}
 echo "ok"
