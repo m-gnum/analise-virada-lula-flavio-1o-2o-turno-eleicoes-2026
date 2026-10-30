@@ -22,6 +22,8 @@ Seções do painel (todas se recalculam a cada filtro):
 6. **Resumo executivo** do recorte, com as mesmas frases em linguagem simples e um bloco de **Segurança pública (CVLI)**: taxa do recorte contra a média do estado e do Brasil, taxa nos lugares onde cada candidato mais e menos cresceu, e correlação com o crescimento quando é relevante (|r| ≥ 0,3). Os trechos que citam unidades (maiores ganhos, perdas, rankings proporcionais) informam também **quanto cada unidade pesa no recorte** (% dos aptos).
 7. **Análise estatística** (bloco final, com seletores próprios; não muda com os filtros do topo): regressões ponderadas por aptos que medem o efeito de cada característica da área (renda, escolaridade, idade, sexo e, entre cidades, CVLI) na variação de Lula e de Flávio, com intervalo de confiança; recortes de Brasil, 5 regiões e 27 estados; comparação do efeito entre regiões (e entre estados de uma região); legenda do filtro "Modelo" (replicado no 2º gráfico) e legenda de ponto cheio/vazio; índice de Moran (os locais vizinhos variaram de forma parecida?) e mapa de manchas por cidade (LISA).
 
+**Celular:** o painel usa o layout de desktop em qualquer tela (`<meta name="viewport" content="width=1280">`); em dispositivos móveis a página aparece reduzida e dá para ampliar com o gesto de pinça.
+
 ## Fontes de dados
 
 Todos os dados são abertos. Os scripts esperam os arquivos na pasta `dados/` com esta estrutura (o script `scripts/00_baixar_dados.sh` baixa e organiza tudo; o download passa de 3 GB compactado e a pasta chega a ~36 GB descompactada).
