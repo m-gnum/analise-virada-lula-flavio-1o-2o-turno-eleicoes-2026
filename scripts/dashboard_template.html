@@ -159,6 +159,26 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
 .lay{background:#f1f7ff;border-left:3px solid var(--flavio);border-radius:4px;padding:6px 10px;margin:6px 0}
 .rl{font-size:12.5px;margin:4px 0 2px}
 @media(max-width:900px){.topo{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi:nth-child(n){grid-column:span 1}.grid2{grid-template-columns:1fr}.grid-eq{grid-template-columns:1fr}#mapa{height:460px}}
+
+.abas{display:flex;justify-content:center;gap:8px;margin:12px auto 4px;max-width:1400px;padding:0 16px}
+.abas button{font-size:14px;font-weight:600;padding:8px 26px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+.abas button.on{background:#1b1f24;color:#fff;border-color:#1b1f24}
+.glos{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:10px}
+.glos .gl{background:#f1f7ff;border:1px solid #cfe0f5;border-radius:8px;padding:8px 12px;font-size:13px}
+.glos .gl p{margin:3px 0 0}
+.cur-sec{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;align-items:start;margin-top:14px}
+.cur-sec .sub{font-size:13px;line-height:1.5}
+.cur-map{position:sticky;top:12px}
+.cmapa{height:520px;border-radius:8px;border:1px solid var(--line)}
+h3.cur-it{display:flex;align-items:center;gap:8px;margin:16px 0 4px;font-size:14px}
+h3.cur-it i{display:inline-block;width:12px;height:12px;border-radius:50%;flex:none}
+ul.cur-ul{margin:0;padding:0 0 0 4px;list-style:none}
+ul.cur-ul li{padding:5px 8px;border-radius:6px;font-size:13px;line-height:1.45;cursor:pointer;border-left:3px solid transparent}
+ul.cur-ul li:hover,ul.cur-ul li.hl{background:#f1f5fb;border-left-color:#1b1f24}
+button.vp{margin-left:6px;font-size:11px;padding:1px 8px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--flavio)}
+.ufpin span{display:block;width:34px;height:22px;line-height:18px;text-align:center;font:700 11px/18px sans-serif;background:#fff;border:2px solid #444;border-radius:5px}
+.ufpin.hl span{background:#1b1f24;color:#fff}
+@media(max-width:900px){.cur-sec{grid-template-columns:1fr}.cur-map{position:static}}
 </style>
 </head>
 <body>
@@ -182,7 +202,8 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
     </ul>
   </div>
 </header>
-<main>
+<nav class="abas" id="abas"><button data-aba="painel" class="on">Painel</button><button data-aba="cur">Curiosidades</button></nav>
+<main id="abaPainel">
   <section class="card filtros">
     <label>Região <select id="fReg"></select></label>
     <label>Estado <select id="fUf"></select></label>
@@ -368,10 +389,20 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
     </ul>
   </section>
 </main>
+<main id="abaCur" hidden>
+  <section class="card" id="curComoLer">
+    <h2>Curiosidades: cidades e estados que fogem do padrão</h2>
+    <p class="sub">Esta aba reúne casos incomuns que apareceram ao cruzar a variação de votos com o perfil dos locais de votação e com o volume de eliminados, abstenção, brancos e nulos. Cada bloco traz a lista de casos e, ao lado, um mapa com as cidades (círculos) e os estados (quadrados) citados. Passe o mouse sobre um caso para vê-lo no mapa, clique para aproximar e use "ver no painel" para abrir a cidade ou o estado na aba Painel.</p>
+    <div class="glos" id="curGlos"></div>
+  </section>
+  <div id="curSecoes"></div>
+  <section class="aviso" id="curAviso"></section>
+</main>
 
 <script>
 const B64 = "__DADOS_B64__";
 const B64E = "__ESTAT_B64__";
+const B64C = "__CURIO_B64__";
 </script>
 <script>
 "use strict";
@@ -1564,6 +1595,80 @@ function stLisa(){
   $('stLisaTxt').innerHTML = `Cada ponto é uma cidade; o tamanho acompanha o número de eleitores. <span style="color:${COL[1]}">●</span> variação alta cercada de variação alta · <span style="color:${COL[2]}">●</span> baixa cercada de baixa · <span style="color:${COL[3]}">●</span> alta cercada de baixa · <span style="color:${COL[4]}">●</span> baixa cercada de alta · <span style="color:#cbd5e1">●</span> sem padrão claro. "Alta" e "baixa" são em relação à média das cidades, em p.p. dos aptos de cada cidade. Indicador local de associação espacial (LISA), p &lt; 0,01 por permutação, sem correção para comparações múltiplas: use como pista, não como prova. Cidades pequenas oscilam mais.`;
 }
 
+/* ---------- aba Curiosidades (casos calculados offline em scripts/09_curiosidades.py) ---------- */
+let CUR, curMapas = null;
+const CUR_COR = ['#2563eb','#d1344a','#0f8b8d','#b45309','#7c5cbf','#374151'];
+const curMk = {}, curMapaDe = {};
+function abrirAba(a){
+  document.querySelectorAll('#abas button').forEach(b=>b.classList.toggle('on', b.dataset.aba===a));
+  $('abaPainel').hidden = a!=='painel'; $('abaCur').hidden = a!=='cur';
+  if(a==='cur') curMapasIniciar();
+  else { map.invalidateSize(); if(mapaLisa) mapaLisa.invalidateSize(); }
+}
+function abrirNoPainel(e){
+  abrirAba('painel');
+  S.reg = ''; S.uf = D.ufs.indexOf(e.uf); S.bai = -1;
+  if(e.k==='c'){ S.mun = D.muns.findIndex(m=>m[1]===S.uf && m[0]===e.mn); S.nivel = S.mun>=0 ? 'bai' : 'mun'; } else { S.mun = -1; S.nivel = 'mun'; }
+  sincronizar(); atualizar(true);
+  window.scrollTo({top: $('abas').offsetTop, behavior:'smooth'});
+}
+function curIniciar(){
+  $('curGlos').innerHTML = CUR.glossario.map(g=>`<div class="gl"><b>${g.t}</b><p>${g.x}</p></div>`).join('');
+  $('curSecoes').innerHTML = CUR.secoes.map((s,si)=>`<section class="card cur-sec" id="cs${si}">
+    <div class="cur-txt"><h2>${s.titulo}</h2><p class="sub">${s.intro}</p>${s.itens.map((it,ii)=>`<h3 class="cur-it"><i style="background:${CUR_COR[ii%CUR_COR.length]}"></i>${it.titulo}</h3>
+      <ul class="cur-ul">${it.linhas.map((l,li)=>`<li data-k="${si}-${ii}-${li}">${l.txt}${l.ents.length===1?'<button class="vp" title="Abrir na aba Painel">ver no painel</button>':''}</li>`).join('')}</ul>${it.nota?`<p class="nota">${it.nota}</p>`:''}`).join('')}</div>
+    <div class="cur-map"><div class="cmapa" id="cm${si}"></div><p class="nota">Círculo = cidade · quadrado = estado. Cores iguais às dos marcadores dos subtítulos.</p></div></section>`).join('');
+  $('curAviso').innerHTML = `<b>Cuidado ao ler</b><ul><li>${CUR.aviso}</li></ul>`;
+  const raiz = $('curSecoes');
+  const chave = el => { const li = el.closest('li[data-k]'); return li ? li.dataset.k : null; };
+  raiz.addEventListener('mouseover', e => { const k = chave(e.target); if(k) curDestacar(k, true); });
+  raiz.addEventListener('mouseout', e => { const k = chave(e.target); if(k) curDestacar(k, false); });
+  raiz.addEventListener('click', e => {
+    const k = chave(e.target); if(!k) return;
+    if(e.target.closest('button.vp')){ const [si,ii,li] = k.split('-').map(Number); abrirNoPainel(CUR.secoes[si].itens[ii].linhas[li].ents[0]); return; }
+    curAproximar(k);
+  });
+}
+function curEnquadrar(m){ m.invalidateSize(); if(m._pts.length>1) m.fitBounds(m._pts, {padding:[28,28], maxZoom:6}); }
+function curMapasIniciar(){
+  if(curMapas){ curMapas.forEach(m=>m.invalidateSize()); return; }
+  curMapas = CUR.secoes.map((s,si)=>{
+    const m = L.map('cm'+si, {zoomSnap:.25, scrollWheelZoom:false}).setView([-14.5,-52], 4);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {maxZoom:12, attribution:'Mapa base © Esri, HERE, Garmin, OpenStreetMap contributors'}).addTo(m);
+    const pts = [];
+    s.itens.forEach((it,ii)=>{ const cor = CUR_COR[ii%CUR_COR.length];
+      it.linhas.forEach((l,li)=>{ const k = `${si}-${ii}-${li}`; curMk[k] = []; curMapaDe[k] = m;
+        l.ents.forEach(e=>{
+          const ll = [e.lat, e.lon]; pts.push(ll);
+          const mk = e.k==='c'
+            ? L.circleMarker(ll, {radius:7, weight:2, color:'#fff', fillColor:cor, fillOpacity:.92})
+            : L.marker(ll, {icon:L.divIcon({className:'ufpin', html:`<span style="border-color:${cor}">${e.uf}</span>`, iconSize:[34,22], iconAnchor:[17,11]})});
+          mk.bindTooltip(`<b>${esc(e.nome)}</b><br>${esc(it.titulo)}`, {sticky:true}).addTo(m);
+          mk.on('mouseover', ()=>{ const li_ = document.querySelector(`li[data-k="${k}"]`); if(li_) li_.classList.add('hl'); });
+          mk.on('mouseout', ()=>{ const li_ = document.querySelector(`li[data-k="${k}"]`); if(li_) li_.classList.remove('hl'); });
+          mk.on('click', ()=>{ const li_ = document.querySelector(`li[data-k="${k}"]`); if(li_) li_.scrollIntoView({block:'nearest', behavior:'smooth'}); });
+          curMk[k].push(mk);
+        });
+      });
+    });
+    m._pts = pts;
+    return m;
+  });
+  setTimeout(()=>curMapas.forEach(curEnquadrar), 150);
+}
+function curDestacar(k, on){
+  if(!curMk[k]) return;
+  for(const mk of curMk[k]){
+    if(mk.setStyle){ mk.setStyle({weight: on?4:2, color: on?'#111':'#fff'}); mk.setRadius(on?11:7); if(on) mk.bringToFront(); }
+    else { const el = mk.getElement(); if(el) el.classList.toggle('hl', on); mk.setZIndexOffset(on?1000:0); }
+  }
+}
+function curAproximar(k){
+  const mks = curMk[k], m = curMapaDe[k]; if(!mks || !mks.length) return;
+  const pts = mks.map(x=>x.getLatLng());
+  if(pts.length===1) m.flyTo(pts[0], Math.max(m.getZoom(), 6), {duration:.6}); else m.flyToBounds(pts, {padding:[30,30], maxZoom:7, duration:.6});
+}
+
 let canvasLisa;
 function stIniciar(){
   const optUF = ST_REGS.slice(1).flatMap(r=>stFilhos(r)).sort((a,b)=>UF_NOME[a].localeCompare(UF_NOME[b],'pt'));
@@ -1584,7 +1689,7 @@ function stIniciar(){
 }
 
 (async function(){
-  D = await carregar(); c = D.c; N = c.ap.length; ST = await carregar(B64E);
+  D = await carregar(); c = D.c; N = c.ap.length; ST = await carregar(B64E); CUR = await carregar(B64C);
   RATE = D.muns.map(m => m[2]>=0 && m[3]>0 ? m[2]/m[3]*1e5 : -1);
   ufReg = D.ufs.map(u=>REG[u]);
   map = L.map('mapa', {preferCanvas:true, zoomSnap:.25}).setView([-14.5,-52], 4);
@@ -1592,7 +1697,7 @@ function stIniciar(){
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {maxZoom:16, attribution:'Mapa base © Esri, HERE, Garmin, OpenStreetMap contributors'}).addTo(map);
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {maxZoom:16, opacity:.8}).addTo(map);
   canvas = L.canvas({padding:.3}); camada = L.layerGroup().addTo(map); tip = L.tooltip({sticky:false, direction:'top', opacity:.97});
-  hashLer(); ligar(); sincronizar(); marcarBotoes(); atualizar(true); stIniciar();
+  hashLer(); ligar(); sincronizar(); marcarBotoes(); atualizar(true); stIniciar(); curIniciar(); $('abas').onclick = e => { const b = e.target.closest('button'); if(b) abrirAba(b.dataset.aba); };
   map.on('zoomend', () => { if(S.arr) desenhar(S.arr); });
   $('carregando').remove();
   setTimeout(() => { map.invalidateSize(); ajustar(S.idx); }, 50);

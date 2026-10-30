@@ -1,6 +1,6 @@
 """Gera index.html (dashboard em arquivo único) e, se existir a base por seção, o CSV por seção.
 
-Lê saida/locais_dashboard.parquet e saida/estatistica.json (script 08), embute os dados compactados
+Lê saida/locais_dashboard.parquet, saida/estatistica.json (script 08) e saida/curiosidades.json (script 09), embute os dados compactados
 (gzip + base64) no modelo scripts/dashboard_template.html.
 Rodar da raiz da pasta de análise: .venv/bin/python -I scripts/05_dashboard.py
 """
@@ -71,9 +71,13 @@ estat = gzip.compress(open("saida/estatistica.json", "rb").read(), 9)
 b64_estat = base64.b64encode(estat).decode("ascii")
 print(f"estatística: gzip+base64 {len(b64_estat)/1e3:.0f} KB")
 
+# casos da aba Curiosidades (script 09)
+b64_cur = base64.b64encode(gzip.compress(open("saida/curiosidades.json", "rb").read(), 9)).decode("ascii")
+print(f"curiosidades: gzip+base64 {len(b64_cur)/1e3:.0f} KB")
+
 html = open("scripts/dashboard_template.html", encoding="utf-8").read()
-assert "__DADOS_B64__" in html and "__ESTAT_B64__" in html
-open("index.html", "w", encoding="utf-8").write(html.replace("__DADOS_B64__", b64).replace("__ESTAT_B64__", b64_estat))
+assert "__DADOS_B64__" in html and "__ESTAT_B64__" in html and "__CURIO_B64__" in html
+open("index.html", "w", encoding="utf-8").write(html.replace("__DADOS_B64__", b64).replace("__ESTAT_B64__", b64_estat).replace("__CURIO_B64__", b64_cur))
 print("index.html gerado")
 
 # CSV por seção (para quem quiser a base completa); só roda se a saída do script 04 estiver na pasta

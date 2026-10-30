@@ -22,6 +22,8 @@ Seções do painel (todas se recalculam a cada filtro):
 6. **Resumo executivo** do recorte, com as mesmas frases em linguagem simples e um bloco de **Segurança pública (CVLI)**: taxa do recorte contra a média do estado e do Brasil, taxa nos lugares onde cada candidato mais e menos cresceu, e correlação com o crescimento quando é relevante (|r| ≥ 0,3). Os trechos que citam unidades (maiores ganhos, perdas, rankings proporcionais) informam também **quanto cada unidade pesa no recorte** (% dos aptos).
 7. **Análise estatística** (bloco final, com seletores próprios; não muda com os filtros do topo): regressões ponderadas por aptos que medem o efeito de cada característica da área (renda, escolaridade, idade, sexo e, entre cidades, CVLI) na variação de Lula e de Flávio, com intervalo de confiança; recortes de Brasil, 5 regiões e 27 estados; comparação do efeito entre regiões (e entre estados de uma região); legenda do filtro "Modelo" (replicado no 2º gráfico) e legenda de ponto cheio/vazio; índice de Moran (os locais vizinhos variaram de forma parecida?) e mapa de manchas por cidade (LISA).
 
+**Abas:** o painel tem duas abas. **Painel** (seções 0 a 7) e **Curiosidades**: 6 blocos de casos incomuns de cidades e estados (bairros ou cidades muito uniformes ou muito diferentes, outliers, correlações muito diretas entre perfil e variação, perfil sem efeito, viradas de liderança e o peso dos eliminados, da abstenção e de brancos e nulos no ganho de Lula e Flávio). Cada bloco tem um mapa ao lado, com as cidades (círculos) e os estados (quadrados) citados; o botão "ver no painel" abre a cidade ou o estado na aba Painel. A aba explica, em linguagem simples, desvio, correlação e R². Os casos vêm de regras com corte de tamanho (`scripts/09_curiosidades.py`) e descrevem padrões, não causas.
+
 **Celular:** o painel usa o layout de desktop em qualquer tela (`<meta name="viewport" content="width=1280">`); em dispositivos móveis a página aparece reduzida e dá para ampliar com o gesto de pinça.
 
 ## Fontes de dados
@@ -78,6 +80,7 @@ Cada script lê a saída do anterior. Rodar sempre da raiz do projeto, com as de
 | 4 | `scripts/04_analise.py` | `saida/secao_analise.parquet`, `saida/locais_dashboard.parquet`, `saida/analise_perfil.json` | junta tudo, calcula as variações em p.p. dos aptos, agrega por local de votação (a tabela que alimenta o painel) e roda análises de apoio (quintis, comparação perdeu × ganhou e uma regressão ponderada) |
 | 7 | `scripts/07_seguranca_sinesp.py` | `saida/seguranca_municipio.parquet` | taxa de CVLI por município: soma as vítimas dos 12 últimos meses fechados, casa os municípios do TSE com o Sinesp (UF + nome) e com o código IBGE, e divide pela população do Censo 2022. **Roda antes do 05** |
 | 8 | `scripts/08_analise_estatistica.py` | `saida/estatistica.json` | regressões (cada característica sozinha, todas juntas, dentro da cidade e entre cidades), teste de interação renda × região (e renda × estado dentro de cada região), índice de Moran e LISA (detalhes em "Análise estatística", abaixo); roda antes do 05 |
+| 9 | `scripts/09_curiosidades.py` | `saida/curiosidades.json` | casos curiosos (uniformidade, outliers, correlações fortes, perfil sem efeito, outros cenários e eliminados × abstenção × brancos e nulos) para a aba "Curiosidades"; roda antes do 05 |
 | 5 | `scripts/05_dashboard.py` | `index.html`, `saida/secoes_variacao_votos.csv` | embute a tabela por local, a segurança por município e os resultados estatísticos no modelo `scripts/dashboard_template.html` e gera o painel e o CSV por seção |
 | 6 | `scripts/06_conferencia_tse.py` | texto no terminal | compara os totais da base com os oficiais do TSE por município e zona |
 
@@ -175,8 +178,9 @@ python -I scripts/03_perfil_secao.py
 python -I scripts/04_analise.py
 python -I scripts/07_seguranca_sinesp.py         # taxa de CVLI por município (roda antes do 05)
 python -I scripts/08_analise_estatistica.py       # regressões, Moran e LISA (roda antes do 05)
+python -I scripts/09_curiosidades.py              # casos da aba Curiosidades (roda antes do 05)
 python -I scripts/05_dashboard.py                # gera index.html
 python -I scripts/06_conferencia_tse.py          # confere os totais com o TSE
 ```
 
-Só para regenerar o HTML a partir das tabelas prontas, basta `saida/locais_dashboard.parquet`, `saida/seguranca_municipio.parquet`, `saida/estatistica.json`, o modelo e `python -I scripts/05_dashboard.py`.
+Só para regenerar o HTML a partir das tabelas prontas, basta `saida/locais_dashboard.parquet`, `saida/seguranca_municipio.parquet`, `saida/estatistica.json`, `saida/curiosidades.json`, o modelo e `python -I scripts/05_dashboard.py`.
