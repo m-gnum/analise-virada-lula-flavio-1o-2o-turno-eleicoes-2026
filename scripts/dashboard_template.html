@@ -150,6 +150,8 @@ table.perfil td.sgun{min-width:120px;text-align:center;background:#f3f5f8;color:
 table.perfil td.sgun b{color:var(--ink);font-size:13.5px}
 table.perfil td.sgun small{display:block;font-size:10.5px}
 table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)}
+/* PIB per capita: valor alto é bom (verde), baixo é ruim (laranja), o contrário do CVLI */
+table.tu td.sg small.pbup{color:var(--verde)}table.tu td.sg small.pbdn{color:#c05621}
 .bars{position:relative}
 .bars .br{position:relative;height:15px;margin:1px 0}
 .bars .br i{position:absolute;top:1px;bottom:1px;border-radius:2px}
@@ -749,7 +751,7 @@ function gUnid(idx){
   const cp = g => {
     const v = g.pb.pc; if(!isFinite(v)) return '–';
     const r = ref.pb.pc, d = r ? (v/r-1)*100 : NaN;
-    return `<b>R$ ${fmtd(v/1000,1)} mil</b>` + (isFinite(d) ? `<small class="${d>=15?'up':d<=-13?'dn':''}">${sgnd(d,0)}% vs. média ${ref.nomeSg}</small>` : '');
+    return `<b>R$ ${fmtd(v/1000,1)} mil</b>` + (isFinite(d) ? `<small class="${d>=15?'pbup':d<=-13?'pbdn':''}">${sgnd(d,0)}% vs. média ${ref.nomeSg}</small>` : '');
   };
   let h = `<table class="tu"><tr><th>${{uf:'Estado',mun:'Cidade',bai:'Bairro',loc:'Local de votação'}[nivel]}</th>`
     + `<th>Tamanho<small>eleitores aptos</small></th><th>Resultado nos dois turnos<small>% dos votos válidos, 1º → 2º turno</small></th>`
