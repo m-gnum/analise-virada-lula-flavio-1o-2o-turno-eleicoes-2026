@@ -18,8 +18,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system
 header{padding:18px 16px 6px;max-width:1400px;margin:0 auto}
 h1{margin:0;font-size:22px;letter-spacing:-.2px;text-align:center}
 h1.secao{margin:34px 0 14px}
-.secao-sub{max-width:980px;margin:-6px auto 14px;text-align:center;font-size:13.5px;line-height:1.55}
-.secao-sub b{color:var(--ink)}
+p.sub.secao-sub{max-width:980px;margin:-6px auto 14px;text-align:center;font-size:13.5px;line-height:1.55}
+p.sub.secao-sub b{color:var(--ink)}
 header .sub.desc{text-align:center}
 h2{margin:0 0 4px;font-size:16px}
 .sub{color:var(--mut);margin:4px 0 0}
@@ -132,17 +132,6 @@ table.perfil td,table.perfil th{font-size:12px;padding:5px 5px}
 .ins li.p::before{content:"▲";color:var(--verde)}
 .ins li.n::before{content:"▼";color:#c05621}
 .ins li.i::before{content:"●";color:var(--mut)}
-table.heat{border-collapse:separate;border-spacing:2px;font-size:12px;width:100%;table-layout:fixed}
-table.heat th{font-weight:600;color:var(--ink);background:#f3f5f8;padding:5px 4px;text-align:center;border-radius:4px;font-size:11.5px;line-height:1.3}
-table.heat th small{display:block;font-weight:400;color:var(--mut)}
-table.heat th.corner{background:none;text-align:left;font-weight:400;color:var(--mut)}
-table.heat td{text-align:center;padding:6px 3px;border-radius:4px;font-variant-numeric:tabular-nums;line-height:1.25;height:54px}
-table.heat td b{display:block;font-size:13.5px}
-table.heat td small{display:block;font-size:10.5px;opacity:.85}
-table.heat td.vazio{background:#f3f5f8;color:#9aa1ab}
-table.heat td.tot,table.heat th.tot{outline:1px solid var(--line)}
-.escala{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--mut);margin:8px 2px 0}
-.escala i{display:block;height:10px;width:220px;border-radius:5px}
 .hctl{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end;margin:8px 0}
 .hctl .dica{flex:1 1 280px;max-width:640px;font-size:12px;line-height:1.4;color:var(--mut);background:#f1f7ff;border:1px solid #cfe0f5;border-radius:8px;padding:6px 10px}
 .hctl .dica b{color:var(--ink)}
@@ -284,24 +273,6 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
     <div class="ins" id="iComp"></div>
   </section>
 
-  <section class="card">
-    <h2>Perfil do eleitorado cruzado: característica 1 × característica 2</h2>
-    <p class="sub">A taxa de CVLI, se escolhida, é a da cidade (só existe até esse nível e se repete em bairros e locais). Os locais de votação do filtro atual são divididos em 5 grupos (quintis, com o mesmo número de eleitores aptos) por cada característica; o cruzamento forma 25 grupos. Cada célula mostra a variação em p.p. dos eleitores aptos do grupo (cor e número em destaque) e em votos.</p>
-    <div class="hctl">
-      <label>Característica 1 (linhas) <select id="fH1"></select></label>
-      <label>Característica 2 (colunas) <select id="fH2"></select></label>
-      <label>Variável exibida
-        <span class="seg" id="fMetrica">
-          <button data-m="l" class="on">Lula</button><button data-m="f">Flávio</button><button data-m="bn">Brancos + nulos</button><button data-m="ab">Abstenção</button>
-        </span>
-      </label>
-    </div>
-    <div id="heat" style="overflow-x:auto"></div>
-    <div class="escala" id="heatEscala"></div>
-    <p class="nota" id="notaHeat"></p>
-    <div class="ins" id="iHeat"></div>
-  </section>
-
   <h1 class="secao">Resumo Executivo</h1>
 
   <section class="card">
@@ -351,7 +322,7 @@ table.tu td.sg small.up{color:#c05621}table.tu td.sg small.dn{color:var(--verde)
   <section class="card">
     <h2>O efeito muda de região para região?</h2>
     <p class="sub" id="stRegSub"></p>
-    <div class="hctl"><label>Recorte <select id="stRegSel"></select></label><label>Característica <select id="stVar"></select></label></div>
+    <div class="hctl"><label>Recorte <select id="stRegSel"></select></label><label>Característica <select id="stVar"></select></label><label>Modelo <select id="stMod2"></select></label></div>
     <div id="stPorReg"></div>
     <div class="ins" id="stRegTxt"></div>
   </section>
@@ -450,8 +421,8 @@ async function carregar(b64 = B64){
 }
 
 let D, c, N, ufReg, map, camada, canvas, tip;
-const S = {reg:'', uf:-1, mun:-1, bai:-1, nivel:'uf', lula:true, flavio:true, h1:'rd', h2:'mu', met:'l', tam:20, ord:'auto', qtd:'20'};
-const DEF = {h1:'rd', h2:'mu', met:'l', tam:20, ord:'auto', qtd:'20'};
+const S = {reg:'', uf:-1, mun:-1, bai:-1, nivel:'uf', lula:true, flavio:true, tam:20, ord:'auto', qtd:'20'};
+const DEF = {tam:20, ord:'auto', qtd:'20'};
 const CAMPOS = ['sec','ap','ab1','ab2','l1','l2','f1','f2','o1','b1','b2','n1','n2'];
 
 function derivar(g){
@@ -799,7 +770,7 @@ function gUnid(idx){
   ins('iUnid', pos, neg, info);
 }
 
-/* ---------- perfil cruzado (mapa de calor) ---------- */
+/* ---------- características do perfil (quintis) ---------- */
 const PERFIL = {
   mu:{rot:'% de mulheres', curto:'% mulheres', f:i=>c.mu[i]/c.pe[i]*100},
   i1:{rot:'% de 16 a 24 anos', curto:'% 16–24 anos', f:i=>c.i1[i]/c.pe[i]*100},
@@ -814,15 +785,6 @@ const PERFIL = {
   sg:{rot:'Mortes violentas: taxa de CVLI por 100 mil habitantes (12 meses; dado da cidade, que se repete em bairros e locais)', curto:'Taxa de CVLI do município', f:i=>RATE[c.mun[i]], ok:i=>RATE[c.mun[i]]>=0, med:true}
 };
 const fv = (k,v) => PERFIL[k].renda ? 'R$ '+fmt(v)+' · '+fmtd(v/SM,1)+' SM' : k==='sg' ? fmtd(v,1)+' por 100 mil' : fmtd(v,0)+'%';
-const METS = {
-  l:{rot:'Lula', cor:COR.lula, neg:'#4b5563', d:g=>g.l2-g.l1, bom:1},
-  f:{rot:'Flávio', cor:COR.flavio, neg:'#4b5563', d:g=>g.f2-g.f1, bom:1},
-  bn:{rot:'Brancos + nulos', cor:'#7c5cbf', neg:'#0f8b8d', d:g=>g.b2+g.n2-g.b1-g.n1, bom:-1},
-  ab:{rot:'Abstenção', cor:COR.ambar, neg:'#0f8b8d', d:g=>g.ab2-g.ab1, bom:-1}
-};
-const HF = ['ap','l1','l2','f1','f2','b1','b2','n1','n2','ab1','ab2'];
-const novoG = () => { const g = {n:0}; for(const f of HF) g[f]=0; return g; };
-
 /* quintis ponderados pelos aptos; devolve o quintil de cada local de idx e a média de cada quintil */
 function quint(idx, key){
   const P = PERFIL[key], v = idx.map(P.f);
@@ -837,79 +799,6 @@ function quint(idx, key){
   return {q, media: s.map((x,k)=>w[k]?x/w[k]:0)};
 }
 const hex = h => [1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
-/* escala: se todas as células têm o mesmo sinal, vai do menor ao maior valor (mais contraste); senão, é centrada em zero */
-function corCel(v, esc, M){
-  const {min, max, mesmo} = esc;
-  const t = mesmo ? .08 + .92*(Math.abs(v)-min)/Math.max(max-min,1e-9) : Math.min(1, Math.abs(v)/max), a = hex(v>=0 ? M.cor : M.neg);
-  const u = Math.pow(t, .8), rgb = a.map(x=>Math.round(255-(255-x)*u));
-  const lum = .299*rgb[0]+.587*rgb[1]+.114*rgb[2];
-  return `background:rgb(${rgb});color:${lum<150?'#fff':'#1b1f24'}`;
-}
-
-function heat(idx){
-  RESUMO_HEAT = '';
-  const k1 = S.h1, k2 = S.h2, P1 = PERFIL[k1], P2 = PERFIL[k2], M = METS[S.met];
-  const base = idx.filter(i=>c.pe[i]>0 && c.ap[i]>0 && (!P1.ok||P1.ok(i)) && (!P2.ok||P2.ok(i)));
-  if(base.length<50){
-    $('heat').innerHTML = '<p class="sub" style="padding:30px 6px">Poucos locais no filtro atual para formar 25 grupos. Amplie o filtro.</p>';
-    $('heatEscala').innerHTML = ''; $('notaHeat').textContent = ''; ins('iHeat', [], ['Poucos locais no filtro para este cruzamento.']); return;
-  }
-  const A = quint(base,k1), B = quint(base,k2);
-  const cel = Array.from({length:5},()=>Array.from({length:5},novoG));
-  const lin = Array.from({length:5},novoG), col = Array.from({length:5},novoG), tot = novoG();
-  base.forEach((i,j) => {
-    const a = A.q[j], b = B.q[j];
-    for(const g of [cel[a][b], lin[a], col[b], tot]){ for(const f of HF) g[f]+=c[f][i]; g.n++; }
-  });
-  const pp = g => M.d(g)/g.ap*100;
-  const valido = g => g.n>=5 && g.ap>=tot.ap*0.003;
-  const vs = []; for(const r of cel) for(const g of r) if(valido(g)) vs.push(pp(g));
-  const mesmo = vs.length>0 && (vs.every(v=>v>=0) || vs.every(v=>v<=0));
-  const ab = vs.map(Math.abs), max = Math.max(...ab, 1e-9), escala = {min:Math.min(...ab), max, mesmo};
-  const td = (g, extra='', tit='') => {
-    if(g.n<5) return `<td class="vazio ${extra}" title="Menos de 5 locais neste grupo">–</td>`;
-    return `<td class="${extra}" style="${corCel(pp(g),escala,M)}" title="${esc(tit)}${tit?' | ':''}${fmt(g.n)} locais · ${fmt(g.ap)} aptos (${fmtd(g.ap/tot.ap*100,1)}% do filtro) · ${sgn(M.d(g))} votos"><b>${sgnd(pp(g),2)} p.p.</b><small>${kk(M.d(g))} votos</small></td>`;
-  };
-  const rotQ = (k, A, q) => `Q${q+1}<small>${fv(k, A.media[q])}</small>`;
-  let h = `<table class="heat"><colgroup><col style="width:15%">${'<col>'.repeat(6)}</colgroup><tr><th class="corner">↓ ${esc(P1.curto)}<br>→ ${esc(P2.curto)}</th>`;
-  for(let b=0;b<5;b++) h += `<th>${rotQ(k2,B,b)}</th>`;
-  h += `<th class="tot">Todos<small>${P2.curto}</small></th></tr>`;
-  for(let a=0;a<5;a++){
-    h += `<tr><th>${rotQ(k1,A,a)}</th>`;
-    for(let b=0;b<5;b++) h += td(cel[a][b], '', `${P1.curto} ${fv(k1,A.media[a])} (Q${a+1}) × ${P2.curto} ${fv(k2,B.media[b])} (Q${b+1})`);
-    h += td(lin[a], 'tot', `${P1.curto} ${fv(k1,A.media[a])} (Q${a+1}), todos`) + '</tr>';
-  }
-  h += `<tr><th class="tot">Todos<small>${P1.curto}</small></th>`;
-  for(let b=0;b<5;b++) h += td(col[b], 'tot', `${P2.curto} ${fv(k2,B.media[b])} (Q${b+1}), todos`);
-  h += td(tot, 'tot', 'Todos os locais do filtro') + '</tr></table>';
-  $('heat').innerHTML = h;
-  const gr = !mesmo ? `${M.neg},#fff,${M.cor}` : `#fff,${vs[0]>=0?M.cor:M.neg}`;
-  $('heatEscala').innerHTML = mesmo
-    ? `<span>${fmtd(vs[0]>=0?escala.min:-escala.max,2)} p.p.</span><i style="background:linear-gradient(90deg,${vs[0]>=0?'#fff,'+M.cor:M.neg+',#fff'})"></i><span>${fmtd(vs[0]>=0?escala.max:-escala.min,2)} p.p. (${esc(M.rot)}, escala do menor ao maior valor das 25 células)</span>`
-    : `<span>${esc(M.rot)}: queda</span><i style="background:linear-gradient(90deg,${gr})"></i><span>alta</span><span>(±${fmtd(max,2)} p.p. dos aptos nas pontas)</span>`;
-  $('notaHeat').textContent = `${(k1==='sg'||k2==='sg') ? 'A taxa de CVLI é da cidade e se repete em todos os locais dela (não existe por bairro), então esses grupos juntam cidades inteiras. ' : ''}${fmt(base.length)} locais, ${fmt(tot.ap)} eleitores aptos. Q1 = 20% dos eleitores nos locais com o menor valor da característica; Q5 = 20% nos locais com o maior. Abaixo de cada Q, o valor médio. Células com menos de 5 locais aparecem vazias. Cada característica é dividida em quintis separadamente, então grupos de características correlacionadas (por exemplo, superior e renda) podem ter poucos locais nos cantos.`;
-
-  // insights
-  const lista = [];
-  for(let a=0;a<5;a++) for(let b=0;b<5;b++) if(valido(cel[a][b])) lista.push({a,b,g:cel[a][b],p:pp(cel[a][b])});
-  const pos=[], neg=[], info=[];
-  const desc = x => `${esc(P1.curto)} ${fv(k1,A.media[x.a])} (Q${x.a+1}) com ${esc(P2.curto)} ${fv(k2,B.media[x.b])} (Q${x.b+1})`;
-  const frase = (x, rot) => `${rot}: locais com ${desc(x)}: ${sgnd(x.p,2)} p.p. (${sgn(M.d(x.g))} votos; ${fmt(x.g.n)} locais, ${fmtd(x.g.ap/tot.ap*100,1)}% dos aptos).`;
-  if(lista.length){
-    const mx = lista.reduce((u,v)=>v.p>u.p?v:u), mn = lista.reduce((u,v)=>v.p<u.p?v:u);
-    const altaTxt = `Maior alta de ${esc(M.rot)}`, quedaTxt = `Maior queda de ${esc(M.rot)}`;
-    if(M.bom>0){ if(mx.p>0) pos.push(frase(mx, altaTxt)); if(mn.p<0) neg.push(frase(mn, quedaTxt)); else neg.push(`${esc(M.rot)} não caiu em nenhum dos grupos com tamanho relevante.`); }
-    else { if(mn.p<0) pos.push(frase(mn, quedaTxt)); if(mx.p>0) neg.push(frase(mx, altaTxt)); }
-  }
-  const tend = (k, P, G, Ax) => `Ao longo de ${esc(P.curto)}, de Q1 (${fv(k,Ax.media[0])}) a Q5 (${fv(k,Ax.media[4])}): ${esc(M.rot)} vai de ${sgnd(pp(G[0]),2)} p.p. a ${sgnd(pp(G[4]),2)} p.p. (diferença de ${sgnd(pp(G[4])-pp(G[0]),2)} p.p.).`;
-  if(lin[0].n>=5 && lin[4].n>=5) info.push(tend(k1,P1,lin,A));
-  if(col[0].n>=5 && col[4].n>=5) info.push(tend(k2,P2,col,B));
-  if(lista.length){
-    const mx2 = lista.reduce((u,v)=>v.p>u.p?v:u), mn2 = lista.reduce((u,v)=>v.p<u.p?v:u);
-    RESUMO_HEAT = `No cruzamento escolhido (${esc(P1.curto)} × ${esc(P2.curto)}), a variação de ${esc(M.rot)} é maior em locais com ${desc(mx2)} e menor em locais com ${desc(mn2)}.`;
-  }
-  ins('iHeat', pos, neg, info);
-}
 
 /* ---------- perfil das áreas que mais ganharam / perderam ---------- */
 const FKEYS = Object.keys(PERFIL);
@@ -1062,7 +951,7 @@ function corZ(z, cor){
 }
 
 let CACHE = {key:''};
-let RESUMO_REGRAS = [], RESUMO_HEAT = '';
+let RESUMO_REGRAS = [];
 function perfilAreas(idx){
   RESUMO_REGRAS = [];
   const key = [S.reg, S.uf, S.mun, S.bai, FK.join(',')].join('|');
@@ -1218,46 +1107,6 @@ function contrastes(idx){
   return {cs, base, n, Q};
 }
 
-/* melhor e pior combinação de duas características (25 grupos), para cada variável, em todos os pares */
-function htmlPares(ct, NL, NF){
-  const {base, n, Q} = ct, FLD = ['ap','l1','l2','f1','f2','b1','b2','n1','n2','ab1','ab2'];
-  const arr = FLD.map(f => { const a = new Float64Array(n); for(let j=0;j<n;j++) a[j] = c[f][base[j]]; return a; });
-  let totAp = 0; for(let j=0;j<n;j++) totAp += arr[0][j];
-  const dcel = (m, o, acc) => m==='l' ? acc[o+2]-acc[o+1] : m==='f' ? acc[o+4]-acc[o+3] : m==='bn' ? acc[o+6]+acc[o+8]-acc[o+5]-acc[o+7] : acc[o+10]-acc[o+9];
-  const grupos = [], rk = {l:[], f:[]}, rn = {l:[], f:[]};
-  for(let a=0; a<FK.length; a++) for(let b=a+1; b<FK.length; b++){
-    const acc = new Float64Array(25*12), qa = Q[a].q, qb = Q[b].q;
-    for(let j=0;j<n;j++){ const o = (qa[j]*5+qb[j])*12; for(let f=0;f<11;f++) acc[o+f] += arr[f][j]; acc[o+11]++; }
-    const k1 = FK[a], k2 = FK[b];
-    // duas faixas de idade (i1..i4), ou duas de escolaridade (e0..e3), se excluem entre si
-    if((/^i\d$/.test(k1) && /^i\d$/.test(k2)) || (/^e\d$/.test(k1) && /^e\d$/.test(k2))) continue;
-    const desc = cel => `${esc(PERFIL[k1].curto)} de ${fmtF(k1,Q[a].media[cel.a])} (Q${cel.a+1}) e ${esc(PERFIL[k2].curto)} de ${fmtF(k2,Q[b].media[cel.b])} (Q${cel.b+1})`;
-    const layQ = (k, q) => q===2 ? `<b>${k==='rd'?'renda média':k==='sg'?'taxa de CVLI média':'nível médio de '+NOMEF[k]}</b>` : layFr(k, [-1.5,-.5,0,.5,1.5][q]);
-    const curto = cel => `${layQ(k1,cel.a)} e ${layQ(k2,cel.b)}`;
-    const li = [];
-    for(const [m, nome] of [['l',cl(COR.lula,'Lula')],['f',cl(COR.flavio,'Flávio')],['bn','<b>Brancos + nulos</b>'],['ab','<b>Abstenção</b>']]){
-      let mx = null, mn = null;
-      for(let q=0;q<25;q++){
-        const o = q*12, ap = acc[o];
-        if(acc[o+11]<5 || ap<totAp*.003) continue;
-        const d = dcel(m,o,acc), cel = {a:Math.floor(q/5), b:q%5, p:d/ap*100};
-        if(!mx || cel.p>mx.p) mx = cel;
-        if(!mn || cel.p<mn.p) mn = cel;
-      }
-      if(!mx || (mx.a===mn.a && mx.b===mn.b)) continue;
-      if(m==='l' || m==='f'){ rk[m].push({p:mx.p, t:curto(mx)}); rn[m].push({p:mn.p, t:curto(mn)}); }
-      li.push(`<li>${nome}: ${mx.p>0?'maior alta':'menor queda'} em locais com ${desc(mx)} (${sgnd(mx.p,2)} p.p. dos aptos); ${mn.p<0?'maior queda':'menor alta'} em locais com ${desc(mn)} (${sgnd(mn.p,2)} p.p.).</li>`);
-    }
-    if(li.length) grupos.push(`<details class="par"><summary>${esc(PERFIL[k1].curto)} × ${esc(PERFIL[k2].curto)}</summary><ul>${li.join('')}</ul></details>`);
-  }
-  const lista = (arr, dir) => arr.sort((x,y)=>dir*(y.p-x.p)).slice(0,3).map(o=>`${o.t} (${sgnd(o.p,2)} p.p.)`).join('; ');
-  const resumo = [['l',NL],['f',NF]].map(([m,nome]) => {
-    const pior = rn[m].length ? Math.min(...rn[m].map(o=>o.p)) : 0;
-    return `${nome}, olhando todas as combinações de duas características: <b>maiores altas</b> em áreas com ${lista(rk[m],1)}. <b>${pior<0?'Quedas e menores altas':'Menores altas'}</b> em áreas com ${lista(rn[m],-1)}.`;
-  });
-  return {resumo, html: `<details class="pares"><summary>Ver todas as ${grupos.length} combinações de característica 1 × característica 2 (Lula, Flávio, brancos + nulos e abstenção)</summary><p class="nota">Em cada combinação, o local é dividido em 25 grupos (quintis das duas características). Os pontos mostram o grupo com a maior e o de menor variação em p.p. dos aptos, só entre grupos com pelo menos 5 locais e 0,3% dos aptos do recorte. Q1 = menor valor da característica, Q5 = maior.</p>${grupos.join('')}</details>`};
-}
-
 function resumoEscopo(idx, nivel, titulo, unico){
   const NL = cl(COR.lula,'Lula'), NF = cl(COR.flavio,'Flávio'), t = somar(idx);
   const pan = [], onde = [], perf = [], atn = [], comb = [], seg = [];
@@ -1383,17 +1232,14 @@ function resumoEscopo(idx, nivel, titulo, unico){
   }
   if(t.da>0) atn.push(`A abstenção subiu neste recorte, o que reduziu o ganho dos dois.`);
 
-  /* combinando fatores (só quando há um único recorte; usa as regras e o cruzamento mostrados acima) */
+  /* combinando fatores (só quando há um único recorte; usa as regras mostradas acima) */
   if(unico){
     for(const r of RESUMO_REGRAS) comb.push(`${cl(r.cor,r.nome)}: ${r.lg?`a combinação de ${r.lg} parece ter tido <b>mais impacto positivo</b>${r.lp?`; já a combinação de ${r.lp} parece ter tido <b>menos impacto positivo</b>`:''}. <span class="rm">Em números: ganhou mais em áreas com ${esc(r.ganho)}${r.perda?` e menos em áreas com ${esc(r.perda)}`:''}.</span>`:`cresceu mais em áreas com ${esc(r.ganho)}${r.perda?` e menos em áreas com ${esc(r.perda)}`:''}.`}`);
-    if(RESUMO_HEAT) comb.push(RESUMO_HEAT.replace('No cruzamento escolhido','No cruzamento selecionado na seção acima'));
   }
 
-  const par = ct ? htmlPares(ct, NL, NF) : null;
-  if(par) comb.unshift(...par.resumo);
   const bloco = (tit, l) => l.length ? `<h4>${tit}</h4><ul>${l.map(x=>`<li>${x}</li>`).join('')}</ul>` : '';
   const corpo = bloco('Panorama', pan) + bloco('Onde cada um ganhou, e se foi nos mesmos lugares', onde) + bloco('Que tipo de área virou para cada candidato', perf) + bloco('Segurança pública (CVLI)', seg)
-    + (comb.length || ct ? `<h4>Combinando vários fatores</h4>${comb.length?`<ul>${comb.map(x=>`<li>${x}</li>`).join('')}</ul>`:''}${par?par.html:''}` : '') + bloco('Pontos de atenção', atn);
+    + (comb.length ? `<h4>Combinando vários fatores</h4><ul>${comb.map(x=>`<li>${x}</li>`).join('')}</ul>` : '') + bloco('Pontos de atenção', atn);
   return unico ? `<div class="rs"><h3>${titulo}</h3>${corpo}</div>` : `<details class="rs" open><summary>${titulo}</summary>${corpo}</details>`;
 }
 
@@ -1440,8 +1286,8 @@ function atualizar(refit){
   S.arr = arr;
   desenhar(arr);
   if(refit) ajustar(idx);
-  FK = ativas(idx); optsH();
-  rank(arr, t); insMapa(arr); gBalanco(t); gUnid(idx); heat(idx); perfilAreas(idx); resumoExecutivo(idx);
+  FK = ativas(idx);
+  rank(arr, t); insMapa(arr); gBalanco(t); gUnid(idx); perfilAreas(idx); resumoExecutivo(idx);
   S.idx = idx;
   hashSalvar();
 }
@@ -1460,10 +1306,6 @@ function csv(){
   a.download = 'locais_filtrados.csv'; a.click();
 }
 
-function optsH(){
-  for(const k of ['h1','h2']) if(!FK.includes(S[k])) S[k] = FK.find(x=>x!==S[k==='h1'?'h2':'h1']) || S[k];
-  for(const [id,k] of [['fH1','h1'],['fH2','h2']]) $(id).innerHTML = FK.map(v=>`<option value="${v}"${v===S[k]?' selected':''}${v===S[k==='h1'?'h2':'h1']?' disabled':''}>${esc(PERFIL[v].rot)}</option>`).join('');
-}
 function hashParams(){
   const p = new URLSearchParams();
   const natural = S.bai>=0 ? 'loc' : S.mun>=0 ? 'bai' : (S.uf>=0 || S.reg) ? 'mun' : 'uf';
@@ -1489,15 +1331,12 @@ function hashLer(){
   const nv = p.get('nivel'); if(['reg','uf','mun','bai','loc'].includes(nv)) S.nivel = nv;
   if(p.get('lula')==='0') S.lula = false;
   if(p.get('flavio')==='0') S.flavio = false;
-  for(const k of ['h1','h2']) if(PERFIL[p.get(k)]) S[k] = p.get(k);
-  if(METS[p.get('met')]) S.met = p.get('met');
   if(['10','20','25'].includes(p.get('tam'))) S.tam = Number(p.get('tam'));
   if(['auto','dl','df','ppl','ppf','ap'].includes(p.get('ord'))) S.ord = p.get('ord');
   if(['20','50','100','all'].includes(p.get('qtd'))) S.qtd = p.get('qtd');
 }
 function marcarBotoes(){
   document.querySelectorAll('#fTam button').forEach(b=>b.classList.toggle('on', Number(b.dataset.t)===S.tam));
-  document.querySelectorAll('#fMetrica button').forEach(b=>b.classList.toggle('on', b.dataset.m===S.met));
 }
 function ligar(){
   $('fReg').onchange = e => { S.reg = e.target.value; S.uf=-1; S.mun=-1; S.bai=-1; S.nivel = 'uf'; sincronizar(); atualizar(true); };
@@ -1515,14 +1354,8 @@ function ligar(){
   };
   $('fOrd').onchange = e => { S.ord = e.target.value; gUnid(S.idx || filtrar()); hashSalvar(); };
   $('fQtd').onchange = e => { S.qtd = e.target.value; gUnid(S.idx || filtrar()); hashSalvar(); };
-  optsH();
-  $('fH1').onchange = e => { S.h1 = e.target.value; optsH(); heat(S.idx || filtrar()); hashSalvar(); };
-  $('fH2').onchange = e => { S.h2 = e.target.value; optsH(); heat(S.idx || filtrar()); hashSalvar(); };
   document.querySelectorAll('#fTam button').forEach(b => b.onclick = () => {
     S.tam = Number(b.dataset.t); document.querySelectorAll('#fTam button').forEach(x=>x.classList.toggle('on', x===b)); perfilAreas(S.idx || filtrar()); hashSalvar();
-  });
-  document.querySelectorAll('#fMetrica button').forEach(b => b.onclick = () => {
-    S.met = b.dataset.m; document.querySelectorAll('#fMetrica button').forEach(x=>x.classList.toggle('on', x===b)); heat(S.idx || filtrar()); hashSalvar();
   });
 }
 
@@ -1553,6 +1386,10 @@ const ST_DICA = {
   cid_simples: '<b>Cada cidade é um ponto</b>, uma característica por vez (inclui CVLI). Mistura efeitos de características que andam juntas.'
 };
 const ST_LIM = .5;
+const stLegenda = () => [
+  {type:'scatter', mode:'markers', x:[null], y:[null], name:'Ponto cheio = efeito relevante', hoverinfo:'skip', marker:{color:'#6b7280', size:10, symbol:'circle', line:{color:'#6b7280', width:2}}},
+  {type:'scatter', mode:'markers', x:[null], y:[null], name:'Ponto vazio = efeito pequeno ou incerto', hoverinfo:'skip', marker:{color:'#6b7280', size:10, symbol:'circle-open', line:{color:'#6b7280', width:2}}}
+];
 const stRel = k => (k.lo>0 || k.hi<0) && Math.abs(k.b) >= ST_LIM;
 const stP = p => p<.001 ? '< 0,001' : fmtd(p,3);
 const stRotL = v => ST_ROT[v][0].toLowerCase()+ST_ROT[v].slice(1);
@@ -1577,12 +1414,12 @@ function stForest(){
     hovertemplate: vars_.map(v=>`<b>${ST_ROT[v]}</b><br>${cand==='lula'?'Lula':'Flávio'}: ${sgnd(K[v].b,2)} p.p. por +1 DP<br>IC 95%: ${sgnd(K[v].lo,2)} a ${sgnd(K[v].hi,2)}<br>p (Holm): ${stP(K[v].p_holm)}<extra></extra>`)
   });
   const xs = vars_.flatMap(v=>[A[v].lo,A[v].hi,B[v].lo,B[v].hi]), m = Math.max(1.2, Math.ceil(Math.max(...xs.map(Math.abs))*2)/2);
-  Plotly.react('stForest', [tr('lula',A,.14,COR.lula), tr('flavio',B,-.14,COR.flavio)], {
-    ...LAY, height: 90+vars_.length*62, margin:{l:150,r:20,t:10,b:44},
+  Plotly.react('stForest', [tr('lula',A,.14,COR.lula), tr('flavio',B,-.14,COR.flavio), ...stLegenda()], {
+    ...LAY, height: 110+vars_.length*62, margin:{l:150,r:20,t:50,b:44},
     xaxis:{range:[-m,m], zeroline:true, zerolinecolor:'#111', zerolinewidth:1, gridcolor:'#e5e7eb', title:{text:'Variação em p.p. dos aptos, para +1 desvio-padrão da característica', font:{size:11}}},
     yaxis:{tickvals:y0, ticktext:vars_.map(v=>ST_ROT[v]), range:[-.6, vars_.length-.4], fixedrange:true, zeroline:false},
     shapes:[{type:'rect', xref:'x', yref:'paper', x0:-ST_LIM, x1:ST_LIM, y0:0, y1:1, fillcolor:'rgba(107,114,128,.12)', line:{width:0}, layer:'below'}],
-    legend:{orientation:'h', y:1.08, x:0}, hovermode:'closest'
+    legend:{orientation:'h', x:0, y:1, yanchor:'bottom', font:{size:11}}, hovermode:'closest'
   }, {displayModeBar:false, responsive:true});
 
   // cartões de contexto
@@ -1597,14 +1434,13 @@ function stForest(){
   // frases
   const ar = mod.startsWith('cid') ? 'cidades' : 'áreas';
   const frase = (cand, K) => {
-    const nome = stNome(cand), dp = E[cand].dp;
+    const nome = stNome(cand);
     const rel = vars_.filter(v=>stRel(K[v])).sort((a,b)=>Math.abs(K[b].b)-Math.abs(K[a].b));
-    if(!rel.length) return `<li class="i">${nome}: nenhuma característica tem efeito relevante neste modelo (todas abaixo de ${fmtd(ST_LIM,1)} p.p. por desvio-padrão, ou com intervalo que inclui zero). Em outras palavras, o perfil medido pouco distingue onde ${nome} cresceu mais ou menos.</li>`;
+    if(!rel.length) return `<li class="i">${nome}: o perfil medido quase não ajuda a explicar onde ele cresceu ou perdeu. Nenhuma característica fez diferença relevante.</li>`;
     const top = rel.slice(0,3), sem = vars_.filter(v=>!rel.includes(v));
-    return `<li class="${K[top[0]].b>0?'p':'n'}">${nome}: ` + top.map(v=>`em ${ar} com mais ${ST_NOUN[v]}, a variação foi <b>${K[v].b>0?'maior':'menor'}</b> (${sgnd(K[v].b,2)} p.p.)`).join('; ') + '.'
-      + (rel.length>3 ? ` Há ainda ${rel.length-3} efeito${rel.length-3>1?'s':''} relevante${rel.length-3>1?'s':''} na tabela abaixo do gráfico.` : '')
-      + (mod.startsWith('cid') ? '' : ` O maior efeito equivale a ${fmtd(Math.abs(K[top[0]].b)/dp*100,0)}% do desvio-padrão da variação de ${nome} entre os locais (${fmtd(dp,1)} p.p.).`)
-      + (sem.length ? ` Sem efeito relevante: ${sem.map(stRotL).join(', ')}.` : '') + `</li>`;
+    return `<li class="${K[top[0]].b>0?'p':'n'}">${nome}: ` + top.map(v=>`${ar} com mais ${ST_NOUN[v]} tiveram variação <b>${K[v].b>0?'maior':'menor'}</b> (${sgnd(K[v].b,1)} p.p.)`).join('; ') + '.'
+      + (rel.length>3 ? ` Há mais ${rel.length-3} na tabela abaixo.` : '')
+      + (sem.length ? ` Sem diferença relevante: ${sem.map(stRotL).join(', ')}.` : '') + `</li>`;
   };
   // inversões de sinal entre "sozinha" e "ajustado" (só nos modelos de locais)
   let aviso = '';
@@ -1612,12 +1448,12 @@ function stForest(){
     const S1 = {lula:ST.reg[reg].lula.simples, flavio:ST.reg[reg].flavio.simples}, S2 = {lula:ST.reg[reg].lula.ajustado, flavio:ST.reg[reg].flavio.ajustado};
     const inv = [];
     for(const c of ['lula','flavio']) for(const v of Object.keys(S1[c])) if(stRel(S1[c][v]) && stRel(S2[c][v]) && Math.sign(S1[c][v].b)!==Math.sign(S2[c][v].b)) inv.push(`${c==='lula'?'Lula':'Flávio'}, ${ST_ROT[v].toLowerCase()}`);
-    if(nmun<30) aviso += `<li class="i"><b>Atenção:</b> o recorte tem ${nmun===1 ? 'um único município' : `só ${nmun} municípios`}, e ${nmun===1 ? 'o erro-padrão não pode ser agrupado por cidade' : 'o erro-padrão agrupado por cidade é menos confiável'}: leia os intervalos com cautela.</li>`;
-    if(inv.length) aviso += `<li class="i"><b>Atenção:</b> o sinal do efeito inverte quando as outras características entram no modelo (${inv.join('; ')}). Essas características andam juntas com outras, então o efeito "sozinho" não deve ser lido isoladamente.</li>`;
+    if(nmun<30) aviso += `<li class="i"><b>Atenção:</b> este recorte tem ${nmun===1 ? 'um único município' : `só ${nmun} municípios`}, então a margem de erro é menos confiável. Leia com cautela.</li>`;
+    if(inv.length) aviso += `<li class="i"><b>Atenção:</b> em alguns casos o efeito tem um sinal quando a característica é olhada sozinha e o sinal oposto quando as outras entram no modelo (${inv.join('; ')}). Isso acontece porque as características andam juntas; o resultado "todas juntas" é o mais confiável.</li>`;
   }
-  const lim = r2l!=null ? `<li class="i">Juntas, essas características explicam <b>${fmtd(r2l*100,0)}%</b> da variação de ${stNome('lula')} e <b>${fmtd(r2f*100,0)}%</b> da de ${stNome('flavio')}: a maior parte da variação não é explicada pelo perfil.</li>` : '';
-  $('stTexto').innerHTML = `<b class="t">Leitura (${M.txt})</b><ul>${frase('lula',A)}${frase('flavio',B)}${lim}${aviso}</ul>` +
-    `<div class="nota">Para ter noção de tamanho: a variação de Lula neste recorte foi, em média, ${sgnd(E.lula.media,1)} p.p. e a de Flávio ${sgnd(E.flavio.media,1)} p.p. dos aptos. Efeitos de 1 p.p. ou menos por desvio-padrão são pequenos perto dessa variação. Lembrete: são diferenças médias entre ${ar}, não o que fez cada eleitor mudar de voto.</div>`;
+  const lim = r2l!=null ? `<li class="i">Mesmo juntas, essas características explicam ${Math.max(r2l,r2f)<.5?'só ':''}<b>${fmtd(r2l*100,0)}%</b> da variação de ${stNome('lula')} e <b>${fmtd(r2f*100,0)}%</b> da de ${stNome('flavio')}. O resto vem de outros fatores que o painel não mede.</li>` : '';
+  $('stTexto').innerHTML = `<b class="t">Em resumo (${M.txt})</b><ul>${frase('lula',A)}${frase('flavio',B)}${lim}${aviso}</ul>` +
+    `<div class="nota">Os números entre parênteses mostram quanto a variação muda, em p.p. dos aptos, quando a característica sobe uma diferença típica entre ${ar}. Para ter noção de tamanho: a variação média de Lula neste recorte foi ${sgnd(E.lula.media,1)} p.p. e a de Flávio ${sgnd(E.flavio.media,1)} p.p.; diferenças de 1 p.p. ou menos são pequenas perto disso. São padrões entre ${ar}, não o motivo do voto de cada eleitor.</div>`;
 
   // tabela
   const lin = (K, cand) => vars_.map(v=>`<tr><td>${ST_ROT[v]}</td><td>${cand}</td><td>${sgnd(K[v].b,2)}</td><td>${sgnd(K[v].lo,2)} a ${sgnd(K[v].hi,2)}</td><td>${stP(K[v].p_holm)}</td><td>${stRel(K[v])?'<span class="rel-s">sim</span>':'<span class="rel-n">não</span>'}</td></tr>`).join('');
@@ -1638,12 +1474,12 @@ function stPorReg(){
     marker:{color:cor, size:10, symbol:k.map(z=>stRel(z)?'circle':'circle-open'), line:{color:cor,width:2}},
     hovertemplate:k.map((z,i)=>`<b>${esc(stRot(regs[i]))}</b><br>${cand==='lula'?'Lula':'Flávio'}: ${sgnd(z.b,2)} p.p. por +1 DP<br>IC 95%: ${sgnd(z.lo,2)} a ${sgnd(z.hi,2)}<extra></extra>`)}; };
   const xs = ['lula','flavio'].flatMap(c=>K(c).flatMap(z=>[z.lo,z.hi])), m = Math.max(1.2, Math.ceil(Math.max(...xs.map(Math.abs))*2)/2);
-  Plotly.react('stPorReg', [tr('lula',.14,COR.lula), tr('flavio',-.14,COR.flavio)], {
-    ...LAY, height:90+regs.length*50, margin:{l:ehBr?110:170,r:20,t:10,b:44},
+  Plotly.react('stPorReg', [tr('lula',.14,COR.lula), tr('flavio',-.14,COR.flavio), ...stLegenda()], {
+    ...LAY, height:110+regs.length*50, margin:{l:ehBr?110:170,r:20,t:50,b:44},
     xaxis:{range:[-m,m], zeroline:true, zerolinecolor:'#111', gridcolor:'#e5e7eb', title:{text:`${ST_ROT[v]}: variação em p.p. dos aptos, para +1 desvio-padrão`, font:{size:11}}},
     yaxis:{tickvals:yy, ticktext:regs.map(stRot), range:[-.6, regs.length-.4], fixedrange:true, zeroline:false},
     shapes:[{type:'rect', xref:'x', yref:'paper', x0:-ST_LIM, x1:ST_LIM, y0:0, y1:1, fillcolor:'rgba(107,114,128,.12)', line:{width:0}, layer:'below'}],
-    legend:{orientation:'h', y:1.1, x:0}
+    legend:{orientation:'h', x:0, y:1, yanchor:'bottom', font:{size:11}}
   }, {displayModeBar:false, responsive:true});
   const I = ST.interacao, nm = $('stMod').selectedOptions[0].textContent;
   const ar = mod.startsWith('cid') ? 'cidades' : 'áreas';
@@ -1651,22 +1487,24 @@ function stPorReg(){
   const bloco = c => {
     const k = Object.fromEntries(regs.map((r,i)=>[r, K(c)[i]])), nome = stNome(c);
     const pos = cinco.filter(r=>stRel(k[r]) && k[r].b>0), neg = cinco.filter(r=>stRel(k[r]) && k[r].b<0), neu = cinco.filter(r=>!pos.includes(r) && !neg.includes(r));
-    const d = l => l.map(r=>`${stEm(r)} (${sgnd(k[r].b,2)})`).join(', ');
-    const partes = [pos.length?`<b>maior</b> ${d(pos)}`:'', neg.length?`<b>menor</b> ${d(neg)}`:'', neu.length?`sem efeito relevante ${neu.map(stEm).join(', ')}`:''].filter(Boolean);
+    const partes = [pos.length?`<b>maior</b> ${pos.map(stEm).join(', ')}`:'', neg.length?`<b>menor</b> ${neg.map(stEm).join(', ')}`:'', neu.length?`sem diferença relevante ${neu.map(stEm).join(', ')}`:''].filter(Boolean);
     const maxR = cinco.reduce((a,r)=>k[r].b>k[a].b?r:a), minR = cinco.reduce((a,r)=>k[r].b<k[a].b?r:a);
-    const claro = k[maxR].lo > k[minR].hi;
-    const fecho = pos.length && neg.length ? ` O sinal muda de ${ehBr?'região para região':'estado para estado'}: não é um padrão ${ehBr?'nacional':'da região'}.`
-      : (pos.length || neg.length) && !neu.length ? ` O sinal é o mesmo em todos os ${un}, então o padrão é ${ehBr?'nacional':'da região'} (a intensidade pode variar).`
-      : '';
-    const dif = claro ? ` ${stRot(maxR)} e ${stRot(minR)} são os ${un} mais distantes e seus intervalos não se sobrepõem: a diferença entre eles é clara.` : (pos.length||neg.length) ? ` Os ${un} mais distantes (${stRot(maxR)} e ${stRot(minR)}) têm intervalos que se sobrepõem, então a diferença entre eles pode ser só ruído.` : '';
-    const corpo = !pos.length && !neg.length ? `a variação <b>não mudou de forma relevante</b> em nenhum${ehBr?'a região':' estado'} (efeitos menores que ${fmtd(ST_LIM,1)} p.p. ou com intervalo que inclui zero)` : `a variação foi ${partes.join('; ')}`;
-    return `<li class="${pos.length&&neg.length?'n':pos.length?'p':neg.length?'n':'i'}">${nome}: em ${ar} com mais ${ST_NOUN[v]}, ${corpo}. ${ehBr?'No país todo':`No ${rs} como um todo`}: ${sgnd(k[rs].b,2)}${stRel(k[rs])?'':' (sem efeito relevante)'}.${fecho}${dif}</li>`;
+    const claro = k[maxR].lo > k[minR].hi && (pos.length || neg.length);
+    const corpo = !pos.length && !neg.length ? `a variação <b>não mudou de forma relevante</b> em nenhum${ehBr?'a região':' estado'}` : `a variação foi ${partes.join('; ')}`;
+    const todo = `${ehBr?'No país todo':`No ${rs} como um todo`}, ${stRel(k[rs]) ? `o efeito é ${k[rs].b>0?'positivo':'negativo'}` : 'o efeito é pequeno'}.`;
+    const fecho = pos.length && neg.length ? ` Ou seja, o efeito muda de sinal de ${ehBr?'região para região':'estado para estado'}: não é um padrão ${ehBr?'do país todo':'da região toda'}.`
+      : (pos.length || neg.length) && !neu.length ? ` O efeito tem o mesmo sinal em todos os ${un}.` : '';
+    const dif = claro ? ` ${stRot(maxR)} e ${stRot(minR)} são os extremos, e a diferença entre eles é clara.` : (pos.length||neg.length) ? ` A diferença entre ${stRot(maxR)} e ${stRot(minR)} é pequena perto da incerteza e pode ser só ruído.` : '';
+    return `<li class="${pos.length&&neg.length?'n':pos.length?'p':neg.length?'n':'i'}">${nome}: nas ${ar} com mais ${ST_NOUN[v]}, ${corpo}. ${todo}${fecho}${dif}</li>`;
   };
   const ti = ehBr ? I : ST.interacao_uf[rs];
   const onde = ehBr ? 'as regiões' : `os estados do ${rs}`;
+  const nSig = ['lula','flavio'].filter(c=>ti[c].p<.05), pMax = Math.max(ti.lula.p, ti.flavio.p);
   const teste = v==='renda' && mod==='ajustado'
-    ? `<li class="i"><b>Teste formal (renda, modelo ajustado):</b> o efeito difere entre ${onde} para ${stNome('lula')} (F = ${fmtd(ti.lula.F,1)}, p ${stP(ti.lula.p)}) e para ${stNome('flavio')} (F = ${fmtd(ti.flavio.F,1)}, p ${stP(ti.flavio.p)}). ${ehBr ? 'Ou seja, não existe um único "efeito da renda" para o país.' : (ti.lula.p<.01 && ti.flavio.p<.01 ? 'Ou seja, o efeito da renda também varia dentro da região.' : 'Quando o p-valor é alto, as diferenças entre os estados podem ser só ruído.')}</li>`
-    : `<li class="i">O teste formal de diferença entre ${onde} foi feito só para a renda, no modelo ajustado (escolha "Renda do responsável" e "Ajustado" para vê-lo). Para os demais casos, a comparação é pelos intervalos do gráfico.</li>`;
+    ? `<li class="i"><b>Teste estatístico:</b> ` + (nSig.length===2 ? `o efeito da renda realmente muda entre ${onde}, para ${stNome('lula')} e para ${stNome('flavio')} (p ${stP(pMax)}). ${ehBr ? 'Não existe um único "efeito da renda" para o país.' : 'O efeito da renda também varia dentro da região.'}`
+        : nSig.length===1 ? `o efeito da renda muda entre ${onde} para ${stNome(nSig[0])}, mas não há evidência clara para ${stNome(nSig[0]==='lula'?'flavio':'lula')}.`
+        : `não há evidência clara de que o efeito da renda mude entre ${onde}: as diferenças vistas podem ser ruído.`) + `</li>`
+    : `<li class="i">O teste estatístico de diferença entre ${onde} existe só para a renda no modelo "todas juntas". Nas outras combinações, compare as barras: se elas não se sobrepõem, a diferença é clara.</li>`;
   const faltam = sem.length ? `<li class="i">Sem modelo entre cidades (menos de 30 municípios): ${sem.map(r=>stRot(r)).join(', ')}.</li>` : '';
   $('stRegTxt').innerHTML = `<ul>${bloco('lula')}${bloco('flavio')}${teste}${faltam}</ul>`;
 }
@@ -1683,16 +1521,17 @@ function stMoran(){
     Primeiro, o modelo ajustado (o mesmo do gráfico de efeitos: renda, escolaridade, idade e sexo do local) calcula a variação que cada local teria se só o perfil importasse. A diferença entre a variação <b>real</b> e essa estimativa é "o que sobra" depois de descontar o perfil. As <b>barras claras</b> medem se essa sobra ainda é parecida entre locais vizinhos. Se for (barra clara alta), há algo no território que o perfil não captura; os dados não dizem o quê. As <b>barras escuras</b> medem a variação como ela foi, sem descontar nada.`;
   const b = M[rs], mm = ST.moran_mun, med = r => (M[r].lula.I+M[r].flavio.I)/2;
   const maxR = filhos.reduce((a,r)=>med(r)>med(a)?r:a), minR = filhos.reduce((a,r)=>med(r)<med(a)?r:a);
-  const red = c => (1-b[c].I_resid/b[c].I)*100, redM = (red('lula')+red('flavio'))/2;
-  const forca = i => i>=.6 ? 'bem mais perto de 1 (vizinhos quase iguais) do que de 0 (sem relação)' : i>=.3 ? 'a meio caminho entre 0 (sem relação) e 1 (vizinhos quase iguais)' : 'mais perto de 0 (pouca relação) do que de 1';
-  const onde = ehBr ? 'no Brasil' : `${stEm(rs)}`;
-  const ref = ehBr ? 'a concentração é mais forte' : 'entre os estados, a concentração é mais forte';
+  const red = c => (1-b[c].I_resid/b[c].I)*100, redM = (red('lula')+red('flavio'))/2, mI = med(rs);
+  const forca = mI>=.6 ? 'forte' : mI>=.3 ? 'moderada' : 'fraca';
+  const onde = ehBr ? 'no Brasil' : stEm(rs);
   $('stMoranTxt').innerHTML = `<ul>` +
-    `<li class="i"><b>Variação:</b> ${onde}, ${(b.lula.I+b.flavio.I)/2>=.3?'locais próximos variaram de forma parecida':'locais próximos variaram de forma pouco parecida'}: I = <b>${fmtd(b.lula.I,2)}</b> para ${stNome('lula')} e <b>${fmtd(b.flavio.I,2)}</b> para ${stNome('flavio')}, ${forca((b.lula.I+b.flavio.I)/2)}.</li>` +
-    `<li class="i"><b>Parte que o perfil não explica:</b> descontado o perfil, o índice ${redM>0?'cai':'muda'} para <b>${fmtd(b.lula.I_resid,2)}</b> (Lula, ${red('lula')>=0?'queda':'alta'} de ${fmtd(Math.abs(red('lula')),0)}%) e <b>${fmtd(b.flavio.I_resid,2)}</b> (Flávio, ${red('flavio')>=0?'queda':'alta'} de ${fmtd(Math.abs(red('flavio')),0)}%). ${redM<50 ? 'O perfil explica uma fatia da concentração no espaço, mas a maior parte continua lá: locais vizinhos seguem parecidos mesmo quando têm renda, escolaridade, idade e sexo diferentes.' : 'O perfil explica boa parte da concentração no espaço: descontado o perfil, locais vizinhos ficam bem menos parecidos.'}</li>` +
-    `<li class="i"><b>Por ${un === 'estado' ? 'estado' : 'região'}:</b> ${ref} ${stEm(maxR)} (I = ${fmtd(M[maxR].lula.I,2)} para Lula e ${fmtd(M[maxR].flavio.I,2)} para Flávio) e mais fraca ${stEm(minR)} (${fmtd(M[minR].lula.I,2)} e ${fmtd(M[minR].flavio.I,2)}).</li>` +
-    (ehBr ? `<li class="i"><b>Entre cidades:</b> I = ${fmtd(mm.lula.I,2)} (Lula) e ${fmtd(mm.flavio.I,2)} (Flávio): cidades vizinhas também variaram de forma muito parecida.</li>` : '') + `</ul>` +
-    `<div class="nota">Calculado nos ${fmt(b.n)} locais da análise${ehBr?'':` ${stEm(rs)}`}. ${ehBr ? 'Os 623 locais com coordenada aproximada (centro da cidade) não têm renda do entorno e já ficam de fora. ' : 'Locais com coordenada aproximada não entram. '}Em estados com poucos locais o índice oscila mais. Concentração espacial não indica causa: pode refletir história local, campanha ou qualquer outro fator que se distribua pelo território.</div>`;
+    `<li class="i"><b>Variação:</b> ${onde}, locais vizinhos tendem a variar de forma ${mI>=.3?'parecida':'pouco parecida'}: o índice é <b>${fmtd(b.lula.I,2)}</b> para ${stNome('lula')} e <b>${fmtd(b.flavio.I,2)}</b> para ${stNome('flavio')} (0 = sem relação, 1 = vizinhos iguais). A concentração é ${forca}.</li>` +
+    `<li class="i"><b>Parte que o perfil não explica:</b> ` + (redM<50
+      ? `mesmo descontando o perfil (renda, escolaridade, idade e sexo), o índice cai só para <b>${fmtd(b.lula.I_resid,2)}</b> (Lula) e <b>${fmtd(b.flavio.I_resid,2)}</b> (Flávio): vizinhos seguem parecidos mesmo com perfis diferentes. Algo do território que o perfil não mede puxa a variação.`
+      : `descontando o perfil, o índice cai bastante, para <b>${fmtd(b.lula.I_resid,2)}</b> (Lula) e <b>${fmtd(b.flavio.I_resid,2)}</b> (Flávio): boa parte da concentração se explica pelo perfil dos locais.`) + `</li>` +
+    `<li class="i"><b>Por ${ehBr?'região':'estado'}:</b> a concentração é maior ${stEm(maxR)} (${fmtd(M[maxR].lula.I,2)} para Lula e ${fmtd(M[maxR].flavio.I,2)} para Flávio) e menor ${stEm(minR)} (${fmtd(M[minR].lula.I,2)} e ${fmtd(M[minR].flavio.I,2)}).</li>` +
+    (ehBr ? `<li class="i"><b>Entre cidades:</b> o índice é ${fmtd(mm.lula.I,2)} (Lula) e ${fmtd(mm.flavio.I,2)} (Flávio): cidades vizinhas também variaram de forma parecida.</li>` : '') + `</ul>` +
+    `<div class="nota">Calculado nos ${fmt(b.n)} locais da análise${ehBr?'':` ${stEm(rs)}`}. Em estados com poucos locais o índice oscila mais. Concentração no espaço não indica causa: pode refletir história local, campanha ou outro fator que se distribua pelo território.</div>`;
 }
 
 function stLisa(){
@@ -1726,7 +1565,10 @@ function stIniciar(){
   $('stRegSel').innerHTML = $('stMorSel').innerHTML = ST_REGS.map(r=>`<option value="${r}">${r}</option>`).join('');
   $('stVar').innerHTML = Object.keys(ST_ROT).map(v=>`<option value="${v}">${ST_ROT[v]}</option>`).join('');
   $('stIntro').innerHTML = `Esta seção mede, em números, se o perfil das áreas acompanha a variação de votos de cada candidato. Usa ${fmt(ST.meta.n_analise)} locais de votação (de ${fmt(ST.meta.n_locais)}; ficam de fora os com menos de ${ST.meta.min_aptos} aptos ou sem perfil e renda) e ${fmt(ST.mun.Brasil.n)} cidades, em recortes do Brasil, das 5 regiões e dos 27 estados. Para cada característica, o modelo estima quanto a variação (em p.p. dos aptos) muda quando ela sobe um "degrau típico" (1 desvio-padrão: a diferença entre uma área comum e uma com bem mais dessa característica), comparando áreas parecidas nas demais. Os resultados foram calculados antes (scripts/08_analise_estatistica.py) e não mudam com os filtros do topo da página.`;
-  $('stReg').onchange = $('stMod').onchange = () => { stForest(); stPorReg(); };
+  $('stMod2').innerHTML = $('stMod').innerHTML; $('stMod2').value = $('stMod').value;
+  $('stReg').onchange = () => { stForest(); stPorReg(); };
+  $('stMod').onchange = () => { $('stMod2').value = $('stMod').value; stForest(); stPorReg(); };
+  $('stMod2').onchange = () => { $('stMod').value = $('stMod2').value; stForest(); stPorReg(); };
   $('stRegSel').onchange = stPorReg; $('stMorSel').onchange = stMoran;
   $('stVar').onchange = stPorReg; $('stLisaC').onchange = stLisa;
   mapaLisa = L.map('mapaLisa', {zoomSnap:.25, preferCanvas:true}).setView([-14.5,-52], 4);
