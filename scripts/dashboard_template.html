@@ -162,9 +162,14 @@ table.tu td.sg small.pbup{color:var(--verde)}table.tu td.sg small.pbdn{color:#c0
 .rl{font-size:12.5px;margin:4px 0 2px}
 @media(max-width:900px){.topo{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi:nth-child(n){grid-column:span 1}.grid2{grid-template-columns:1fr}.grid-eq{grid-template-columns:1fr}#mapa{height:460px}}
 
-.abas{display:flex;justify-content:center;gap:8px;margin:12px auto 4px;max-width:1400px;padding:0 16px}
-.abas button{font-size:14px;font-weight:600;padding:8px 26px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink)}
-.abas button.on{background:#1b1f24;color:#fff;border-color:#1b1f24}
+.abas{display:flex;justify-content:center;gap:4px;padding:10px 16px 0;background:#dde1e7;border-bottom:1px solid var(--line)}
+.abas button{flex:0 1 560px;min-width:0;max-width:560px;display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:9px 16px 10px;margin-bottom:-1px;border:1px solid transparent;border-bottom:1px solid var(--line);border-radius:10px 10px 0 0;background:transparent;color:var(--mut);text-align:left;font-weight:400;line-height:1.35}
+.abas button b{font-size:15px;font-weight:600;color:var(--mut)}
+.abas button small{font-size:12px;color:var(--mut);white-space:normal}
+.abas button:hover{background:#ccd2db}
+.abas button.on{background:var(--bg);color:var(--ink);border-color:var(--line);border-top:3px solid var(--ink);border-bottom:1px solid var(--bg)}
+.abas button.on b{color:var(--ink)}
+.abas button.on small{color:var(--mut)}
 .glos{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:10px}
 .glos .gl{background:#f1f7ff;border:1px solid #cfe0f5;border-radius:8px;padding:8px 12px;font-size:13px}
 .glos .gl p{margin:3px 0 0}
@@ -204,7 +209,7 @@ button.vp{margin-left:6px;font-size:11px;padding:1px 8px;border-radius:999px;bor
     </ul>
   </div>
 </header>
-<nav class="abas" id="abas"><button data-aba="painel" class="on">Painel</button><button data-aba="cur">Curiosidades</button></nav>
+<nav class="abas" id="abas"><button data-aba="painel" class="on"><b>Painel</b><small>Use os filtros abaixo e navegue pela variação de votos nos Estados, nas cidades e nos bairros. Leia os números da variação junto com dados de características dos locais (renda, escolaridade, entre outros) e identifique correlações com efeito relevante.</small></button><button data-aba="cur"><b>Curiosidades</b><small>Um compilado de Estados, cidades e bairros com características curiosas em relação a variação de votos (grupos que variaram de forma parecida, locais que são outliers, extremos de variação, entre outros).</small></button></nav>
 <main id="abaPainel">
   <section class="card filtros">
     <label>Região <select id="fReg"></select></label>
@@ -462,7 +467,10 @@ const cmpSg = (v, r, de) => { const q = v/r; return `<b>${rotSeg(q)} da média $
 const rotSeg = r => r>=1.5 ? 'muito acima' : r>=1.15 ? 'acima' : r>=.87 ? 'próxima' : r>=.67 ? 'abaixo' : 'muito abaixo';
 
 async function carregar(b64 = B64){
-  const bin = Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
+  // base64 "url-safe" (- e _ no lugar de + e /): sobrevive a visualizadores e canais que trocam "+" por espaço; qualquer outro caractere estranho é descartado
+  let t = b64.replace(/-/g,'+').replace(/_/g,'/').replace(/[^A-Za-z0-9+\/]/g,'');
+  t += '='.repeat((4 - t.length % 4) % 4);
+  const bin = Uint8Array.from(atob(t), ch => ch.charCodeAt(0));
   const ds = new DecompressionStream('gzip');
   const txt = await new Response(new Blob([bin]).stream().pipeThrough(ds)).text();
   return JSON.parse(txt);

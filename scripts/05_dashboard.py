@@ -67,16 +67,16 @@ dados = {
 
 bruto = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
 comp = gzip.compress(bruto, 9)
-b64 = base64.b64encode(comp).decode("ascii")
+b64 = base64.urlsafe_b64encode(comp).decode("ascii")
 print(f"dados: {len(bruto)/1e6:.1f} MB -> gzip+base64 {len(b64)/1e6:.1f} MB | locais {len(loc)}")
 
 # resultados da análise estatística (script 08), embutidos do mesmo jeito
 estat = gzip.compress(open("saida/estatistica.json", "rb").read(), 9)
-b64_estat = base64.b64encode(estat).decode("ascii")
+b64_estat = base64.urlsafe_b64encode(estat).decode("ascii")
 print(f"estatística: gzip+base64 {len(b64_estat)/1e3:.0f} KB")
 
 # casos da aba Curiosidades (script 09)
-b64_cur = base64.b64encode(gzip.compress(open("saida/curiosidades.json", "rb").read(), 9)).decode("ascii")
+b64_cur = base64.urlsafe_b64encode(gzip.compress(open("saida/curiosidades.json", "rb").read(), 9)).decode("ascii")
 print(f"curiosidades: gzip+base64 {len(b64_cur)/1e3:.0f} KB")
 
 html = open("scripts/dashboard_template.html", encoding="utf-8").read()
