@@ -78,6 +78,7 @@ table.comp th{font-weight:600;color:var(--mut);font-size:11.5px}
 table.comp tr.cab td{background:#f3f5f8;font-weight:600}
 .aviso{font-size:12.5px;color:var(--mut);background:#fff8e6;border:1px solid #f0dfae;border-radius:8px;padding:10px 12px}
 .aviso ul{margin:6px 0 0 18px;padding:0}
+.aviso .alerta{color:#b42318;font-weight:700;text-decoration:underline}
 .nota{font-size:12px;color:var(--mut);margin:6px 0 0}
 .stcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin:10px 0}
 .stc{background:#f7f9fb;border:1px solid var(--line);border-radius:8px;padding:8px 12px}
@@ -533,7 +534,7 @@ function fluxoChave(){
   if(S.mun>=0){
     const k = uf+'|'+D.muns[S.mun][0];
     return FLX.rec[k] ? {k, aviso: S.bai>=0 ? 'Bairros e locais de votação têm poucas seções para esta estimativa: o gráfico mostra a cidade inteira.' : ''}
-      : {k: uf, aviso: `${D.muns[S.mun][0]} tem menos de ${FLX.meta.min_secoes} seções, o que é pouco para estimar o fluxo: o gráfico mostra o estado inteiro.`};
+      : {k: uf, aviso: `${esc(fluxoNome(uf+'|'+D.muns[S.mun][0]))} tem <b class="alerta">menos de ${FLX.meta.min_secoes} seções</b>, o que é pouco para estimar o fluxo: <b class="alerta">o gráfico está mostrando o estado inteiro ao invés da cidade</b>.`};
   }
   if(uf) return {k: uf, aviso:''};
   if(S.reg) return {k: S.reg, aviso:''};
@@ -545,7 +546,7 @@ function fluxo(){
   const {k, aviso} = fluxoChave(), r = FLX.rec[k], O = FLX.meta.orig, Dn = FLX.meta.dest;
   const ehLocal = r.cluster==='local de votação';
   $('fluxoSub').innerHTML = `Estimativa do caminho dos eleitores do 1º para o 2º turno em <b>${esc(fluxoNome(k))}</b> (${fmt(r.secoes)} seções). Cada faixa mostra quanto de cada grupo do 1º turno (à esquerda) foi para cada resultado do 2º turno (à direita). Passe o mouse para ver o número e o intervalo de 95%. <b>O voto é secreto: isto é uma estimativa estatística, não um retrato do que cada eleitor fez.</b>`;
-  const av = $('fluxoAviso'); av.style.display = aviso ? '' : 'none'; av.textContent = aviso;
+  const av = $('fluxoAviso'); av.style.display = aviso ? '' : 'none'; av.innerHTML = aviso;
   const F = r.f, LO = r.lo, HI = r.hi;
   const nos = [...O, ...Dn], x = [...O.map(()=>0.001), ...Dn.map(()=>0.999)];
   // posição vertical fixa (na ordem da lista), com folga entre os nós para os rótulos dos grupos pequenos não se sobreporem
