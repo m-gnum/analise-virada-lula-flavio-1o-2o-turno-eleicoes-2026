@@ -1,10 +1,10 @@
 """Casos curiosos da variação de votos (Lula e Flávio, 1º x 2º turno): cidades e estados que fogem do padrão.
 
-Entrada:  saida/locais_dashboard.parquet, saida/seguranca_municipio.parquet, saida/estatistica.json
+Entrada:  saida/locais_dashboard.parquet, saida/seguranca_municipio.parquet, saida/estatistica.json, saida/fluxo_votos.json
 Saída:    saida/curiosidades.json (aba "Curiosidades" do painel)
 Rodar da raiz do projeto: .venv/bin/python -I scripts/09_curiosidades.py
 
-Seis blocos: uniformidade, outliers, correlações fortes, perfil sem efeito, outros cenários e eliminados x abstenção x brancos e nulos.
+Sete blocos: fluxos estimados entre os turnos (saida/fluxo_votos.json, script 11), uniformidade, outliers, correlações fortes, perfil sem efeito, outros cenários e eliminados x abstenção x brancos e nulos.
 Cada caso vem de uma regra com corte mínimo de tamanho (cidades de 15 a 20 mil aptos ou mais, bairros de 1.500 aptos ou mais etc.), para não
 mostrar ruído de unidades pequenas. Os textos descrevem padrões, não causas.
 """
@@ -608,11 +608,130 @@ S6 = {
 }
 SECOES.append(S6)
 
+# ------------------------------------------------------------------ 0. fluxos estimados entre os turnos (script 11): outliers em regiões, estados e capitais
+FLX = json.load(open("saida/fluxo_votos.json", encoding="utf-8"))
+FO, FD = FLX["meta"]["orig"], FLX["meta"]["dest"]
+FR = FLX["rec"]
+REGS = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"]
+CAPITAIS = ["AC|RIO BRANCO", "AL|MACEIÓ", "AP|MACAPÁ", "AM|MANAUS", "BA|SALVADOR", "CE|FORTALEZA", "ES|VITÓRIA", "GO|GOIÂNIA", "MA|SÃO LUÍS", "MT|CUIABÁ", "MS|CAMPO GRANDE", "MG|BELO HORIZONTE", "PA|BELÉM", "PB|JOÃO PESSOA", "PR|CURITIBA", "PE|RECIFE", "PI|TERESINA", "RN|NATAL", "RS|PORTO ALEGRE", "RO|PORTO VELHO", "RR|BOA VISTA", "SC|FLORIANÓPOLIS", "SE|ARACAJU", "SP|SÃO PAULO", "TO|PALMAS", "RJ|RIO DE JANEIRO"]  # Brasília é o próprio DF, já entra como estado
+UFS_F = sorted(k for k in FR if len(k) == 2)
+MUN_ENT = {(r.uf, r.municipio): r for r in CID.itertuples()}
+LARG_MAX = 14  # largura máxima do intervalo de 95% (p.p. da origem) para um caso entrar
+
+
+def fshare(k, i, j):
+    r = FR[k]
+    o = r["orig"][i]
+    return r["f"][i][j] / o * 100, r["lo"][i][j] / o * 100, r["hi"][i][j] / o * 100
+
+
+def fnome(k):
+    if k in REGS:
+        return k
+    if len(k) == 2:
+        return UF_NOME[k]
+    uf, mn = k.split("|")
+    return bonito(mn) + "/" + uf
+
+
+def fent(k):
+    if k in REGS:
+        return []
+    if len(k) == 2:
+        return [ent_e(k)]
+    uf, mn = k.split("|")
+    r = MUN_ENT[(uf, mn)]
+    return [ent_c(r.uf, r.cd_mun, r.municipio)]
+
+
+def foutliers(i, j, n=3):
+    """Recortes (regiões, estados e capitais) cuja estimativa fica longe da do Brasil, com intervalo estreito, que não encosta em 0% nem em 100% e não inclui o valor do Brasil."""
+    br = fshare("Brasil", i, j)[0]
+    out = []
+    for k in REGS + UFS_F + CAPITAIS:
+        p, lo, hi = fshare(k, i, j)
+        if lo > 0.5 and hi < 99.5 and hi - lo <= LARG_MAX and (lo > br or hi < br):
+            out.append((p - br, k, p, lo, hi))
+    out.sort(key=lambda t: -abs(t[0]))
+    return br, out[:n]
+
+
+def flinhas(i, j, n=3):
+    br, os_ = foutliers(i, j, n)
+    o, d = FO[i], FD[j]
+    dest = {"Lula": "para o Lula", "Flávio": "para o Flávio", "Brancos e nulos": "para brancos e nulos", "Abstenção": "para a abstenção"}[d]
+    ls = []
+    for dif, k, p, lo, hi in os_:
+        ref = f"{'bem acima' if dif > 0 else 'bem abaixo'} dos {fm(br, 1 if br < 5 else 0)}% do Brasil"
+        if i == 7 and j == 3:
+            ls.append(linha(f"{B(fnome(k))}: a estimativa aponta que só {fm(p, 0)}% de quem se absteve no 1º turno se absteve de novo [{fm(lo, 0)}–{fm(hi, 0)}%], {ref}.", *fent(k)))
+        elif i == 7:
+            ls.append(linha(f"{B(fnome(k))}: a estimativa aponta que {fm(p, 0)}% de quem se absteve no 1º turno votou {dest.replace('para o', 'no').replace('para a', 'na')} no 2º [{fm(lo, 0)}–{fm(hi, 0)}%], {ref}.", *fent(k)))
+        else:
+            quem = "brancos e nulos do 1º turno" if i == 6 else f"eleitores de {o}"
+            ls.append(linha(f"{B(fnome(k))}: a estimativa aponta que {fm(p, 0)}% dos {quem} foram {dest} [{fm(lo, 0)}–{fm(hi, 0)}%], {ref}.", *fent(k)))
+    return ls
+
+
+def fnac(i):
+    return "No Brasil: " + ", ".join(f"{fm(fshare('Brasil', i, j)[0], 0)}% {'para ' + d if d in ('Lula', 'Flávio') else 'para brancos e nulos' if d == 'Brancos e nulos' else 'na abstenção'}" for j, d in enumerate(FD) if fshare("Brasil", i, j)[0] >= 1) + "."
+
+
+def fitem(i, specs, n=3):
+    ls = []
+    for j in specs:
+        ls += flinhas(i, j, n)
+    tit = {2: "Eleitores de Cury", 3: "Eleitores de Renan Santos", 4: "Eleitores de Caiado", 6: "Brancos e nulos do 1º turno", 7: "Quem se absteve no 1º turno"}[i]
+    return item(tit, ls, fnac(i))
+
+
+def ftroca():
+    """Troca direta entre os dois finalistas: só Flávio -> Lula tem algum sinal (regiões, estados e capitais com limite inferior do intervalo acima de 0,5%)."""
+    ls = []
+    for k in REGS + UFS_F + CAPITAIS:
+        p, lo, hi = fshare(k, 1, 0)
+        if lo > 0.5 and hi - lo <= LARG_MAX:
+            v = FR[k]["f"][1][0]
+            ls.append((p, k, lo, hi, v))
+    ls.sort(key=lambda t: -t[0])
+    out = [linha(f"{B(fnome(k))}: a estimativa aponta que {fm(p, 1)}% dos eleitores de Flávio no 1º turno votaram em Lula no 2º [{fm(lo, 1)}–{fm(hi, 1)}%], cerca de {fm(v / 1e3, 0)} mil votos.", *fent(k)) for p, k, lo, hi, v in ls[:6]]
+    sem_l = [k for k in REGS + UFS_F + CAPITAIS if fshare(k, 0, 1)[1] > 0.5]
+    out.append(linha("Em sentido contrário (Lula → Flávio), a estimativa é ≈ 0% em todas as regiões, estados e capitais: o método não encontra evidência de eleitores de Lula no 1º turno que tenham votado em Flávio no 2º." if not sem_l else f"Lula → Flávio: {', '.join(fnome(k) for k in sem_l)}."))
+    return item(
+        "Trocas diretas entre Lula e Flávio",
+        out,
+        "No Brasil, a estimativa de troca entre os dois é ≈ 0% nos dois sentidos. Esse é o fluxo mais difícil de enxergar com esse método (quem trocou de lado quase não deixa rastro no resultado das seções): um ≈ 0% quer dizer que não há evidência, não que não houve troca. Os casos acima podem também refletir outros padrões locais, como a renda das seções (nesses estados os dois candidatos cresceram mais onde a renda é maior).",
+    )
+
+
+S0 = {
+    "id": "fluxos",
+    "titulo": "Para onde foram os votos do 1º turno: onde a estimativa foge do padrão do país",
+    "intro": (
+        "Estes casos vêm da <b>estimativa de fluxo de votos</b> do bloco \"Para onde foram os votos do 1º turno\" (aba Painel). O voto é secreto: ninguém sabe ao certo para onde foi cada eleitor, e a estimativa é um cálculo estatístico sobre o resultado das seções, com um <b>intervalo de 95%</b> (entre colchetes) que mede a incerteza do cálculo. "
+        "Cada caso compara uma região, um estado ou uma capital com o resultado estimado para o Brasil. "
+        f"Para evitar ruído, só entram casos em que o intervalo é estreito (até {LARG_MAX} p.p.), o valor não encosta em 0% nem em 100% e a faixa inteira fica longe do valor do Brasil. Cidades menores ficam de fora: têm poucas seções e intervalos largos. "
+        "<b>Cuidado:</b> o cálculo supõe que o eleitor de um grupo se comporta de forma parecida em todas as seções do recorte, e isso pode não ser verdade; um intervalo estreito não garante que o número esteja certo."
+    ),
+    "itens": [
+        fitem(2, [0, 1]),
+        fitem(3, [0, 1]),
+        fitem(4, [0, 1]),
+        fitem(6, [0, 2]),
+        fitem(7, [0, 1, 3], n=3),
+        ftroca(),
+    ],
+}
+SECOES.insert(0, S0)
+for n_, s_ in enumerate(SECOES, 1):
+    s_["titulo"] = f"{n_}. " + re.sub(r"^\d+\. ", "", s_["titulo"])
+
 GLOSSARIO = [
     {"t": "Variação (p.p.)", "x": "É a diferença entre o 2º e o 1º turno, em pontos percentuais dos eleitores aptos do recorte. +8 p.p. quer dizer que o candidato ganhou, no 2º turno, votos equivalentes a 8% dos aptos."},
     {"t": "Desvio", "x": "Mostra o quanto as áreas de um lugar diferem umas das outras. Desvio pequeno (0,3 p.p.): bairros que variaram quase igual. Desvio grande (5 p.p.): bairros muito diferentes, uns subindo muito e outros pouco ou caindo."},
     {"t": "Correlação", "x": "Vai de −1 a +1 e diz se duas coisas andam juntas. +0,8: onde uma é maior, a outra costuma ser maior. −0,8: onde uma é maior, a outra costuma ser menor. 0: uma não ajuda a prever a outra. Não indica causa."},
     {"t": "R²", "x": "É a parte da diferença de variação entre os locais que o perfil (renda, escolaridade, idade e sexo) consegue explicar. 70%: sabendo o perfil, quase se prevê a variação. 0% ou menos: o perfil não ajuda. O resto vem de fatores que o painel não mede."},
+    {"t": "Estimativa de fluxo e intervalo de 95%", "x": "O fluxo de votos entre os turnos é uma estimativa estatística, não um dado: o voto é secreto. O intervalo de 95% mostra a faixa em que o número ficaria se o cálculo fosse refeito com outra amostra de seções. Ele não cobre o erro de supor que todos os eleitores de um grupo se comportam do mesmo jeito."},
     {"t": "Eliminados, abstenção, brancos e nulos", "x": "O ganho líquido dos dois candidatos = votos dos eliminados do 1º turno + queda da abstenção + queda de brancos e nulos. A retenção compara o ganho com o volume dos eliminados: acima de 100%, entraram votos novos; abaixo, parte se perdeu."},
 ]
 out = {

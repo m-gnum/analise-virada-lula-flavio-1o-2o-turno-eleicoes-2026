@@ -163,7 +163,10 @@ table.tu td.sg small.pbup{color:var(--verde)}table.tu td.sg small.pbdn{color:#c0
 @media(max-width:900px){.topo{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi:nth-child(n){grid-column:span 1}.grid2{grid-template-columns:1fr}.grid-eq{grid-template-columns:1fr}#mapa{height:460px}}
 
 .selo{font-size:10.5px;font-weight:700;letter-spacing:.04em;color:#8a5a00;background:#fff3d6;border:1px solid #f0dfae;border-radius:999px;padding:2px 8px;vertical-align:3px;margin-left:6px}
-table.flx{border-collapse:collapse;font-size:12.5px;min-width:640px;width:100%}
+table.flx{border-collapse:collapse;font-size:12.5px;min-width:600px;width:100%}
+.fluxo-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:16px;align-items:start}
+.fluxo-grid .h3{margin-top:4px}
+@media(max-width:900px){.fluxo-grid{grid-template-columns:1fr}}
 table.flx th,table.flx td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:center}
 table.flx th:first-child,table.flx td:first-child{text-align:left;white-space:nowrap}
 table.flx td small{display:block;color:var(--mut);font-size:11px}
@@ -255,10 +258,16 @@ button.vp{margin-left:6px;font-size:11px;padding:1px 8px;border-radius:999px;bor
     <h2>Para onde foram os votos do 1º turno <span class="selo">ESTIMATIVA</span></h2>
     <p class="sub" id="fluxoSub"></p>
     <p class="aviso" id="fluxoAviso" style="display:none"></p>
-    <div id="gFluxo" style="height:560px"></div>
-    <p class="nota" id="fluxoNota"></p>
-    <h3 class="h3">Quanto de cada origem foi para cada destino<small class="nota"> (% dos eleitores da origem; entre colchetes, o intervalo de 95%; abaixo, os votos)</small></h3>
-    <div id="fluxoTab" style="overflow-x:auto"></div>
+    <div class="fluxo-grid">
+      <div class="fluxo-esq">
+        <div id="gFluxo" style="height:470px"></div>
+        <p class="nota" id="fluxoNota"></p>
+      </div>
+      <div class="fluxo-dir">
+        <h3 class="h3">Quanto de cada origem foi para cada destino<small class="nota"> (% dos eleitores da origem; entre colchetes, o intervalo de 95%; abaixo, os votos)</small></h3>
+        <div id="fluxoTab" style="overflow-x:auto"></div>
+      </div>
+    </div>
     <div class="ins" id="iFluxo"></div>
     <details class="metodo" id="fluxoMetodo" open>
       <summary>Como esta estimativa é feita, e o que ela não mostra</summary>
@@ -540,7 +549,7 @@ function fluxo(){
   const F = r.f, LO = r.lo, HI = r.hi;
   const nos = [...O, ...Dn], x = [...O.map(()=>0.001), ...Dn.map(()=>0.999)];
   // posição vertical fixa (na ordem da lista), com folga entre os nós para os rótulos dos grupos pequenos não se sobreporem
-  const H = 520, PAD = 30, yPos = vals => { const tot = vals.reduce((a,b)=>a+b,0), util = H - PAD*(vals.length-1); let acc = 0; return vals.map(v=>{ const h = v/tot*util, c = acc + h/2; acc += h + PAD; return c/H; }); };
+  const H = 430, PAD = 28, yPos = vals => { const tot = vals.reduce((a,b)=>a+b,0), util = H - PAD*(vals.length-1); let acc = 0; return vals.map(v=>{ const h = v/tot*util, c = acc + h/2; acc += h + PAD; return c/H; }); };
   const y = [...yPos(r.orig), ...yPos(r.dest)];
   const cores = nos.map(n=>FLX_COR[n]);
   const src = [], dst = [], val = [], cor = [], cd = [];
@@ -564,11 +573,11 @@ function fluxo(){
     Dn.forEach((d,j)=>{
       const p = F[i][j]/r.orig[i]*100, l = LO[i][j]/r.orig[i]*100, u = HI[i][j]/r.orig[i]*100;
       const zero = u < 0.5;
-      h += `<td class="${zero?'zero':''}" title="${esc(o)} → ${esc(d)}: ${fmt(F[i][j])} votos (intervalo de 95%: ${fmt(LO[i][j])} a ${fmt(HI[i][j])})">${zero ? '≈ 0%<small>o método não encontra fluxo*</small>' : `<b>${pcs(p)}%</b> <span class="nota">[${pcs(l)}–${pcs(u)}%]</span><small>${kk(F[i][j]).replace('+','')}</small>`}</td>`;
+      h += `<td class="${zero?'zero':''}" title="${esc(o)} → ${esc(d)}: ${fmt(F[i][j])} votos (intervalo de 95%: ${fmt(LO[i][j])} a ${fmt(HI[i][j])})">${zero ? '≈ 0%<small>sem fluxo*</small>' : `<b>${pcs(p)}%</b> <span class="nota">[${pcs(l)}–${pcs(u)}%]</span><small>${kk(F[i][j]).replace('+','')}</small>`}</td>`;
     });
     h += '</tr>';
   });
-  $('fluxoTab').innerHTML = h + `</table><p class="nota">* "≈ 0%" significa que o método não encontrou evidência desse fluxo (limite inferior do cálculo); não exclui fluxos pequenos que se compensam entre as duas direções.</p>`;
+  $('fluxoTab').innerHTML = h + `</table><p class="nota">* "≈ 0%" (sem fluxo) significa que o método não encontrou evidência desse fluxo (limite inferior do cálculo); não exclui fluxos pequenos que se compensam entre as duas direções.</p>`;
   // leitura em texto: o que o cálculo aponta para cada grupo eliminado e para abstenção
   const linhas = [];
   const maior = i => { let m = 0; Dn.forEach((d,j)=>{ if(F[i][j] > F[i][m]) m = j; }); return m; };
