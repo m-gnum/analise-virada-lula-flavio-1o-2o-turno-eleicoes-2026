@@ -162,6 +162,16 @@ table.tu td.sg small.pbup{color:var(--verde)}table.tu td.sg small.pbdn{color:#c0
 .rl{font-size:12.5px;margin:4px 0 2px}
 @media(max-width:900px){.topo{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi:nth-child(n){grid-column:span 1}.grid2{grid-template-columns:1fr}.grid-eq{grid-template-columns:1fr}#mapa{height:460px}}
 
+.selo{font-size:10.5px;font-weight:700;letter-spacing:.04em;color:#8a5a00;background:#fff3d6;border:1px solid #f0dfae;border-radius:999px;padding:2px 8px;vertical-align:3px;margin-left:6px}
+table.flx{border-collapse:collapse;font-size:12.5px;min-width:640px;width:100%}
+table.flx th,table.flx td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:center}
+table.flx th:first-child,table.flx td:first-child{text-align:left;white-space:nowrap}
+table.flx td small{display:block;color:var(--mut);font-size:11px}
+table.flx td.zero{color:var(--mut)}
+details.metodo{margin-top:12px;background:#f7f9fb;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px}
+details.metodo summary{cursor:pointer;font-weight:600}
+details.metodo p,details.metodo ul{margin:8px 0}
+details.metodo ul{padding-left:18px}
 .abas{display:flex;justify-content:center;gap:4px;padding:10px 16px 0;background:#dde1e7;border-bottom:1px solid var(--line)}
 .abas button{flex:0 1 560px;min-width:0;max-width:560px;display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:9px 16px 10px;margin-top:6px;margin-bottom:-1px;border:1px solid #bcc3ce;border-bottom:1px solid var(--line);border-radius:10px 10px 0 0;background:#eceff3;color:var(--mut);text-align:left;font-weight:400;line-height:1.35}
 .abas button b{font-size:15px;font-weight:600;color:var(--mut)}
@@ -238,6 +248,22 @@ button.vp{margin-left:6px;font-size:11px;padding:1px 8px;border-radius:999px;bor
       <div id="gBalanco" style="height:340px"></div>
       <p class="nota" id="notaBalanco"></p>
     </div>
+  </section>
+
+
+  <section class="card" id="fluxo">
+    <h2>Para onde foram os votos do 1º turno <span class="selo">ESTIMATIVA</span></h2>
+    <p class="sub" id="fluxoSub"></p>
+    <p class="aviso" id="fluxoAviso" style="display:none"></p>
+    <div id="gFluxo" style="height:560px"></div>
+    <p class="nota" id="fluxoNota"></p>
+    <h3 class="h3">Quanto de cada origem foi para cada destino<small class="nota"> (% dos eleitores da origem; entre colchetes, o intervalo de 95%; abaixo, os votos)</small></h3>
+    <div id="fluxoTab" style="overflow-x:auto"></div>
+    <div class="ins" id="iFluxo"></div>
+    <details class="metodo" id="fluxoMetodo" open>
+      <summary>Como esta estimativa é feita, e o que ela não mostra</summary>
+      <div id="fluxoTexto"></div>
+    </details>
   </section>
 
   <h1 class="secao">Mapa de Variação | Variação por Estado/Cidade/Bairro/Local</h1>
@@ -416,6 +442,7 @@ button.vp{margin-left:6px;font-size:11px;padding:1px 8px;border-radius:999px;bor
 const B64 = "__DADOS_B64__";
 const B64E = "__ESTAT_B64__";
 const B64C = "__CURIO_B64__";
+const B64F = "__FLUXO_B64__";
 </script>
 <script>
 "use strict";
@@ -474,6 +501,87 @@ async function carregar(b64 = B64){
   const ds = new DecompressionStream('gzip');
   const txt = await new Response(new Blob([bin]).stream().pipeThrough(ds)).text();
   return JSON.parse(txt);
+}
+
+const FLX_TEXTO = `
+<p><b>O que é.</b> Não existe registro de em quem cada pessoa votou no 1º turno e no 2º: o voto é secreto. O que existe é o resultado de cada seção eleitoral nos dois turnos. A estimativa usa esse resultado de <b>todas as seções do recorte</b> (cerca de 500 mil no Brasil) para calcular quanto, em média, de cada grupo do 1º turno (eleitores de cada candidato, brancos e nulos, abstenção) foi para cada grupo do 2º turno. Esse tipo de cálculo se chama <i>inferência ecológica</i> (regressão ecológica de Goodman, com restrições).</p>
+<p><b>Como funciona, com um exemplo.</b> Em uma seção só não dá para saber para onde foram os 10 votos de um candidato eliminado. Mas, olhando milhares de seções, aparece um padrão: nas seções onde esse candidato foi bem votado, o ganho de um dos finalistas foi maior. Esse padrão indica para onde a maior parte desses votos foi. O cálculo faz isso para todos os grupos ao mesmo tempo, com duas regras: cada grupo de origem distribui 100% dos seus eleitores entre os destinos, e nenhuma fração pode ser negativa. Depois, os fluxos são ajustados para somar exatamente os totais reais de cada origem e de cada destino.</p>
+<p><b>Margem de erro.</b> O intervalo de 95% vem de repetir o cálculo 300 vezes com sorteios de municípios (de locais de votação, quando o recorte tem menos de 30 municípios). Ele mede a incerteza estatística: se a amostra de seções fosse um pouco diferente, o número poderia variar nessa faixa.</p>
+<p><b>O que o intervalo não cobre.</b></p>
+<ul>
+<li><b>Todos os eleitores do mesmo grupo se comportam do mesmo jeito?</b> O método supõe que a fração que vai de uma origem para um destino é parecida em todas as seções do recorte. Na vida real ela varia (por exemplo, o eleitor de um candidato eliminado em bairro rico pode votar diferente do mesmo eleitor em bairro pobre). Se isso for forte, o número estimado pode estar errado mesmo com intervalo estreito. Por isso, recortes menores e mais homogêneos tendem a ser mais confiáveis do que o Brasil inteiro.</li>
+<li><b>Quanto menor o grupo, maior a incerteza.</b> Fluxos de grupos pequenos (como "Zema e outros") têm intervalos mais largos.</li>
+<li><b>Trocas entre Lula e Flávio.</b> Eleitores que mudaram de um para o outro quase não deixam rastro no resultado, e o método tende a colocar esses fluxos em 0%. Um 0% aqui quer dizer que o método não encontrou evidência de troca, não que ela não aconteceu. Trocas pequenas que se compensam entre si não aparecem.</li>
+<li><b>Abstenção.</b> Quem deixou de votar, ou voltou a votar, entra como um grupo. A estimativa não distingue entre quem deixou de ir e quem mudou de domicílio eleitoral, morreu ou entrou no cadastro.</li>
+</ul>
+<p><b>Resumo.</b> É uma estimativa estatística, não um retrato do que cada eleitor fez. Serve para comparar ordens de grandeza e ver tendências (por exemplo, para quem foi a maior parte dos votos de um candidato eliminado), não para afirmar um número exato. Existe só até o nível de cidade (com 300 seções ou mais): bairros e locais de votação têm poucas seções para esse tipo de cálculo.</p>`;
+
+/* ---------- fluxo estimado de votos do 1º para o 2º turno (script 11): sankey + tabela com intervalo de 95% ---------- */
+let FLX;
+const FLX_COR = {'Lula':COR.lula, 'Flávio':COR.flavio, 'Cury':'#6b7280', 'Renan Santos':'#8b95a1', 'Caiado':'#a3acb8', 'Zema e outros':'#c4cbd4', 'Brancos e nulos':'#7c5cbf', 'Abstenção':COR.ambar};
+function fluxoChave(){
+  const uf = S.uf>=0 ? D.ufs[S.uf] : '';
+  if(S.mun>=0){
+    const k = uf+'|'+D.muns[S.mun][0];
+    return FLX.rec[k] ? {k, aviso: S.bai>=0 ? 'Bairros e locais de votação têm poucas seções para esta estimativa: o gráfico mostra a cidade inteira.' : ''}
+      : {k: uf, aviso: `${D.muns[S.mun][0]} tem menos de ${FLX.meta.min_secoes} seções, o que é pouco para estimar o fluxo: o gráfico mostra o estado inteiro.`};
+  }
+  if(uf) return {k: uf, aviso:''};
+  if(S.reg) return {k: S.reg, aviso:''};
+  return {k:'Brasil', aviso:''};
+}
+const fluxoNome = k => k==='Brasil' ? 'Brasil' : k.includes('|') ? (()=>{ const [u,m]=k.split('|'); return m.split(' ').map(p=>p.length>2||!p?p.charAt(0)+p.slice(1).toLowerCase():p.toLowerCase()).join(' ')+'/'+u; })() : (UF_NOME_FLX[k]||k);
+const UF_NOME_FLX = {AC:'Acre',AL:'Alagoas',AP:'Amapá',AM:'Amazonas',BA:'Bahia',CE:'Ceará',DF:'Distrito Federal',ES:'Espírito Santo',GO:'Goiás',MA:'Maranhão',MT:'Mato Grosso',MS:'Mato Grosso do Sul',MG:'Minas Gerais',PA:'Pará',PB:'Paraíba',PR:'Paraná',PE:'Pernambuco',PI:'Piauí',RJ:'Rio de Janeiro',RN:'Rio Grande do Norte',RS:'Rio Grande do Sul',RO:'Rondônia',RR:'Roraima',SC:'Santa Catarina',SP:'São Paulo',SE:'Sergipe',TO:'Tocantins'};
+function fluxo(){
+  const {k, aviso} = fluxoChave(), r = FLX.rec[k], O = FLX.meta.orig, Dn = FLX.meta.dest;
+  const ehLocal = r.cluster==='local de votação';
+  $('fluxoSub').innerHTML = `Estimativa do caminho dos eleitores do 1º para o 2º turno em <b>${esc(fluxoNome(k))}</b> (${fmt(r.secoes)} seções). Cada faixa mostra quanto de cada grupo do 1º turno (à esquerda) foi para cada resultado do 2º turno (à direita). Passe o mouse para ver o número e o intervalo de 95%. <b>O voto é secreto: isto é uma estimativa estatística, não um retrato do que cada eleitor fez.</b>`;
+  const av = $('fluxoAviso'); av.style.display = aviso ? '' : 'none'; av.textContent = aviso;
+  const F = r.f, LO = r.lo, HI = r.hi;
+  const nos = [...O, ...Dn], x = [...O.map(()=>0.001), ...Dn.map(()=>0.999)];
+  // posição vertical fixa (na ordem da lista), com folga entre os nós para os rótulos dos grupos pequenos não se sobreporem
+  const H = 520, PAD = 30, yPos = vals => { const tot = vals.reduce((a,b)=>a+b,0), util = H - PAD*(vals.length-1); let acc = 0; return vals.map(v=>{ const h = v/tot*util, c = acc + h/2; acc += h + PAD; return c/H; }); };
+  const y = [...yPos(r.orig), ...yPos(r.dest)];
+  const cores = nos.map(n=>FLX_COR[n]);
+  const src = [], dst = [], val = [], cor = [], cd = [];
+  const rgba = (h,a)=>{ const n = parseInt(h.slice(1),16); return `rgba(${n>>16},${n>>8&255},${n&255},${a})`; };
+  O.forEach((o,i)=>Dn.forEach((d,j)=>{
+    if(F[i][j] < r.orig[i]*0.002) return;
+    src.push(i); dst.push(O.length+j); val.push(F[i][j]); cor.push(rgba(FLX_COR[d],.38));
+    cd.push(`${o} → ${d}<br><b>${mi(F[i][j]).replace('+','')} votos</b> (${fmtd(F[i][j]/r.orig[i]*100,1)}% de ${o})<br>Intervalo de 95%: ${mi(LO[i][j]).replace('+','')} a ${mi(HI[i][j]).replace('+','')} (${fmtd(LO[i][j]/r.orig[i]*100,1)}% a ${fmtd(HI[i][j]/r.orig[i]*100,1)}%)`);
+  }));
+  const rot = [...O.map((o,i)=>`${o}<br>${mi(r.orig[i]).replace('+','')}`), ...Dn.map((d,j)=>`${d}<br>${mi(r.dest[j]).replace('+','')}`)];
+  Plotly.react('gFluxo', [{type:'sankey', arrangement:'fixed', textfont:{size:12, color:'#1b1f24'},
+    node:{pad:14, thickness:16, label:rot, color:cores, x, y, line:{color:'#fff', width:1}, hovertemplate:'%{label}<extra></extra>'},
+    link:{source:src, target:dst, value:val, color:cor, customdata:cd, hovertemplate:'%{customdata}<extra></extra>'}
+  }], {...LAY, margin:{l:10,r:10,t:10,b:10}}, CFG);
+  $('fluxoNota').innerHTML = `À esquerda, o 1º turno (eleitores aptos por grupo: ${mi(r.orig.reduce((a,b)=>a+b,0)).replace('+','')}); à direita, o 2º turno. As faixas menores que 0,2% da origem não são desenhadas. Intervalo calculado por ${FLX.meta.reps} sorteios de ${ehLocal?'locais de votação':'municípios'} (${fmt(r.conglomerados)} ${ehLocal?'locais':'municípios'} neste recorte).`;
+  // tabela: % da origem (intervalo) e votos
+  const pcs = v => fmtd(v,v<10&&v>0?1:0);
+  let h = `<table class="flx"><tr><th>Origem (1º turno)</th>${Dn.map(d=>`<th>→ ${esc(d)}</th>`).join('')}</tr>`;
+  O.forEach((o,i)=>{
+    h += `<tr><td><span class="dot" style="background:${FLX_COR[o]}"></span> <b>${esc(o)}</b><small>${fmt(r.orig[i])} aptos</small></td>`;
+    Dn.forEach((d,j)=>{
+      const p = F[i][j]/r.orig[i]*100, l = LO[i][j]/r.orig[i]*100, u = HI[i][j]/r.orig[i]*100;
+      const zero = u < 0.5;
+      h += `<td class="${zero?'zero':''}" title="${esc(o)} → ${esc(d)}: ${fmt(F[i][j])} votos (intervalo de 95%: ${fmt(LO[i][j])} a ${fmt(HI[i][j])})">${zero ? '≈ 0%<small>o método não encontra fluxo*</small>' : `<b>${pcs(p)}%</b> <span class="nota">[${pcs(l)}–${pcs(u)}%]</span><small>${kk(F[i][j]).replace('+','')}</small>`}</td>`;
+    });
+    h += '</tr>';
+  });
+  $('fluxoTab').innerHTML = h + `</table><p class="nota">* "≈ 0%" significa que o método não encontrou evidência desse fluxo (limite inferior do cálculo); não exclui fluxos pequenos que se compensam entre as duas direções.</p>`;
+  // leitura em texto: o que o cálculo aponta para cada grupo eliminado e para abstenção
+  const linhas = [];
+  const maior = i => { let m = 0; Dn.forEach((d,j)=>{ if(F[i][j] > F[i][m]) m = j; }); return m; };
+  [2,3,4,5].forEach(i=>{
+    if(r.orig[i] < r.orig.reduce((a,b)=>a+b,0)*0.002) return;
+    const a = Dn.map((d,j)=>[d,F[i][j]/r.orig[i]*100]).filter(x=>x[1]>=1).sort((p,q)=>q[1]-p[1]);
+    linhas.push(`<b>${esc(O[i])}</b> (${fmt(r.orig[i])} eleitores): a estimativa aponta ${a.map(x=>`${fmtd(x[1],0)}% para ${x[0]==='Abstenção'?'a abstenção':x[0]==='Brancos e nulos'?'brancos e nulos':x[0]}`).join(', ')}.`);
+  });
+  const ab = Dn.map((d,j)=>[d,F[7][j]/r.orig[7]*100]).filter(x=>x[0]!=='Abstenção'&&x[1]>=0.5);
+  if(ab.length) linhas.push(`<b>Quem se absteve no 1º turno</b> (${fmt(r.orig[7])} eleitores): ${ab.map(x=>`${fmtd(x[1],1)}% votaram em ${x[0]==='Brancos e nulos'?'branco ou nulo':x[0]} no 2º turno`).join(', ')}.`);
+  const pos = linhas.slice(0,5);
+  ins('iFluxo', null, null, [...pos, 'Valores de grupos com poucos eleitores têm intervalos largos: confira o intervalo na tabela antes de comparar.']);
+  $('fluxoTexto').innerHTML = FLX_TEXTO;
 }
 
 let D, c, N, ufReg, map, camada, canvas, tip;
@@ -1358,7 +1466,7 @@ function atualizar(refit){
   desenhar(arr);
   if(refit) ajustar(idx);
   FK = ativas(idx);
-  rank(arr, t); insMapa(arr); gBalanco(t); gUnid(idx); perfilAreas(idx); resumoExecutivo(idx);
+  rank(arr, t); insMapa(arr); gBalanco(t); fluxo(); gUnid(idx); perfilAreas(idx); resumoExecutivo(idx);
   S.idx = idx;
   hashSalvar();
 }
@@ -1723,7 +1831,7 @@ function stIniciar(){
 }
 
 (async function(){
-  D = await carregar(); c = D.c; N = c.ap.length; ST = await carregar(B64E); CUR = await carregar(B64C);
+  D = await carregar(); c = D.c; N = c.ap.length; ST = await carregar(B64E); CUR = await carregar(B64C); FLX = await carregar(B64F);
   RATE = D.muns.map(m => m[2]>=0 && m[3]>0 ? m[2]/m[3]*1e5 : -1);
   ufReg = D.ufs.map(u=>REG[u]);
   map = L.map('mapa', {preferCanvas:true, zoomSnap:.25}).setView([-14.5,-52], 4);

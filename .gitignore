@@ -10,3 +10,4 @@ saida/*
 !saida/pib_municipio.parquet
 !saida/estatistica.json
 !saida/curiosidades.json
+!saida/fluxo_votos.json
